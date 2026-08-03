@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Редактор проектов</title><meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg">
+  <link rel="stylesheet" href="../css/styles.css"><link rel="stylesheet" href="../css/admin.css">
+</head><body class="admin-page"><div class="site-shell">
+  <header class="header"><div class="container header-inner"><a class="logo" href="../"><span class="logo-badge">♛</span><span>AFFGOLD</span></a><span class="admin-label">Редактор базы</span><a class="btn btn-secondary btn-sm" href="../catalog.html">Открыть сайт</a></div></header>
+  <main class="admin-main"><div class="container">
+    <section class="admin-hero"><span class="seo-eyebrow">Без правки кода</span><h1>Управление проектами</h1><p>Добавляйте, изменяйте и удаляйте карточки через обычную форму. Черновик сохраняется в этом браузере.</p></section>
+    <section class="card admin-guide"><h2>Как опубликовать изменения</h2><ol><li>Отредактируйте список и нажмите «Сохранить файл базы».</li><li>Выберите существующий файл <strong>js/projects-data.js</strong> в папке проекта и подтвердите замену.</li><li>Дважды нажмите <strong>rebuild-site.bat</strong>. После сообщения «Готово» загрузите проект на хостинг.</li></ol><p>Node.js нужен только для пересборки SEO-страниц. Каталог и карточки используют ту же базу.</p></section>
+    <div class="admin-toolbar card"><div><strong id="project-count">Проектов: 0</strong><span id="admin-status" aria-live="polite">Все изменения сохраняются как черновик</span></div><div class="admin-toolbar-actions"><button class="btn btn-primary" type="button" data-add>+ Добавить проект</button><button class="btn btn-secondary" type="button" data-save-file>Сохранить файл базы</button><button class="btn btn-secondary" type="button" data-download>Скачать файл</button><button class="admin-text-btn" type="button" data-reset>Сбросить черновик</button></div></div>
+    <div id="admin-projects" class="admin-projects"></div>
+  </div></main>
+
+  <dialog id="project-dialog" class="admin-dialog"><form id="project-form" method="dialog">
+    <div class="admin-dialog-head"><div><span class="seo-eyebrow">Карточка проекта</span><h2 id="dialog-title">Новый проект</h2></div><button class="admin-close" type="button" data-close aria-label="Закрыть">×</button></div>
+    <input type="hidden" name="editIndex" value="-1">
+    <div class="admin-form-grid">
+      <label><span>Название *</span><input name="name" required placeholder="Например, NORM Casino"></label>
+      <label><span>ID латиницей *</span><input name="id" required pattern="[a-z0-9-]+" placeholder="norm"></label>
+      <label><span>Адрес обзора *</span><input name="slug" required pattern="[a-z0-9-]+" placeholder="norm-casino"></label>
+      <label><span>Промокод *</span><input name="promoCode" required value="BETGOLDTEAM"></label>
+      <label class="admin-wide"><span>Офферная ссылка *</span><input name="url" required type="url" placeholder="https://..."></label>
+      <label class="admin-wide"><span>Логотип *</span><input name="logo" required placeholder="assets/images/logo.svg или загрузите файл ниже"></label>
+      <label class="admin-wide"><span>Загрузить логотип в базу</span><input name="logoFile" type="file" accept="image/png,image/jpeg,image/webp"><small>Для безопасной загрузки используйте PNG, JPEG или WebP до 500 КБ.</small></label>
+      <label><span>Рейтинг</span><input name="rating" type="number" min="0" max="5" step="0.1" value="4.5"></label>
+      <label><span>Вердикт</span><input name="verdict" value="Хорошо"></label>
+      <label><span>Бонус *</span><input name="bonus" required placeholder="100% + 300 FS"></label>
+      <label><span>Подпись бонуса</span><input name="bonusSubtitle" value="На первый депозит"></label>
+      <label><span>Вейджер</span><input name="wager" type="number" min="0" value="35"></label>
+      <label class="admin-wide"><span>Игровые студии через запятую *</span><input name="studios" required placeholder="Pragmatic Play, BGaming, NetEnt"><small>У казино обычно несколько студий. Добавляйте только те, наличие которых проверено в каталоге казино.</small></label>
+      <label><span>Срок вывода</span><select name="payout"><option value="instant">Моментально</option><option value="hour">До 1 часа</option><option value="day">До 24 часов</option></select></label>
+      <label><span>Текст срока вывода</span><input name="payoutLabel" value="До 1 часа"></label>
+      <label class="admin-wide"><span>Типы бонуса через запятую</span><input name="bonusTypes" value="welcome, freespins" placeholder="welcome, freespins, cashback"></label>
+      <label class="admin-wide"><span>Описание *</span><textarea name="description" required rows="4"></textarea></label>
+      <label class="admin-wide"><span>Метки через запятую</span><input name="tags" placeholder="Мобильная версия, Поддержка 24/7"></label>
+      <label class="admin-wide"><span>Особенности — по одной в строке</span><textarea name="features" rows="4"></textarea></label>
+      <label class="admin-wide"><span>Платёжные методы через запятую</span><input name="payments" placeholder="VISA, Mastercard, МИР, Bitcoin"></label>
+      <label class="admin-wide"><span>Текст о бонусах</span><textarea name="tabBonuses" rows="3"></textarea></label>
+      <label class="admin-wide"><span>Текст о слотах</span><textarea name="tabSlots" rows="3"></textarea></label>
+      <label class="admin-wide"><span>Текст о платежах</span><textarea name="tabPayments" rows="3"></textarea></label>
+    </div>
+    <div id="form-error" class="admin-error" hidden></div>
+    <div class="admin-dialog-actions"><button class="btn btn-secondary" type="button" data-close>Отмена</button><button class="btn btn-primary" type="submit">Сохранить проект</button></div>
+  </form></dialog>
+  <script src="../js/projects-data.js"></script><script src="../js/admin.js"></script>
+</div></body></html>

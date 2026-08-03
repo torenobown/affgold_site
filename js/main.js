@@ -1,74 +1,213 @@
+/** Общая логика сайта: меню, вкладки, анимации и активная навигация. */
 document.addEventListener('DOMContentLoaded', () => {
   const menuToggle = document.querySelector('[data-menu-toggle]');
   const nav = document.querySelector('.nav');
-  if (menuToggle && nav) {
-    menuToggle.addEventListener('click', () => nav.classList.toggle('open'));
-  }
 
-  const tabs = document.querySelectorAll('[data-tab-target]');
-  const panels = document.querySelectorAll('[data-tab-panel]');
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.tabTarget;
-      tabs.forEach(item => item.classList.remove('active'));
-      panels.forEach(panel => panel.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelector(`[data-tab-panel="${id}"]`)?.classList.add('active');
+  /** Кастомные выпадающие списки с поддержкой клавиатуры. */
+  const customSelects = [...document.querySelectorAll('.select-wrap select')];
+
+  const closeCustomSelects = (except = null) => {
+    document.querySelectorAll('.custom-select.open').forEach((select) => {
+      if (select === except) return;
+      select.classList.remove('open');
+      select.closest('.catalog-toolbar')?.classList.remove('select-is-open');
+      select.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
     });
-  });
-
-  const chips = document.querySelectorAll('[data-chip-group] .chip');
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const parent = chip.closest('[data-chip-group]');
-      parent?.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-    });
-  });
-
-  const reveals = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    reveals.forEach(el => observer.observe(el));
-  } else {
-    reveals.forEach(el => el.classList.add('visible'));
-  }
-
-  const current = document.body.dataset.page;
-  if (current) {
-    document.querySelectorAll(`[data-page-link="${current}"]`).forEach(el => el.classList.add('active'));
-  }
-
-  const counters = document.querySelectorAll('[data-count]');
-  const animateCounter = (el) => {
-    const target = parseInt(el.dataset.count, 10);
-    const suffix = el.dataset.suffix || '';
-    let currentVal = 0;
-    const step = Math.max(1, Math.round(target / 40));
-    const tick = () => {
-      currentVal += step;
-      if (currentVal >= target) currentVal = target;
-      el.textContent = currentVal + suffix;
-      if (currentVal < target) requestAnimationFrame(tick);
-    };
-    tick();
   };
-  if ('IntersectionObserver' in window && counters.length) {
-    const counterObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          animateCounter(entry.target);
-          counterObserver.unobserve(entry.target);
-        }
+
+  customSelects.forEach((nativeSelect, selectIndex) => {
+    const customSelect = document.createElement('div');
+    const trigger = document.createElement('button');
+    const menu = document.createElement('div');
+    const listboxId = `custom-select-${selectIndex}`;
+
+    customSelect.className = 'custom-select';
+    trigger.className = 'custom-select-trigger';
+    trigger.type = 'button';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-controls', listboxId);
+    menu.className = 'custom-select-menu';
+    menu.id = listboxId;
+    menu.setAttribute('role', 'listbox');
+
+    [...nativeSelect.options].forEach((option, optionIndex) => {
+      const item = document.createElement('button');
+      item.className = 'custom-select-option';
+      item.type = 'button';
+      item.dataset.value = option.value;
+      item.dataset.index = String(optionIndex);
+      item.textContent = option.textContent;
+      item.setAttribute('role', 'option');
+      menu.append(item);
+    });
+
+    nativeSelect.classList.add('custom-select-native');
+    nativeSelect.closest('.select-wrap')?.classList.add('custom-select-ready');
+    nativeSelect.after(customSelect);
+    customSelect.append(trigger, menu);
+
+    const items = [...menu.querySelectorAll('.custom-select-option')];
+    const sync = () => {
+      const selected = nativeSelect.options[nativeSelect.selectedIndex] || nativeSelect.options[0];
+      trigger.innerHTML = `<span></span><i aria-hidden="true"></i>`;
+      trigger.querySelector('span').textContent = selected?.textContent || '';
+      items.forEach((item) => {
+        const active = item.dataset.value === nativeSelect.value;
+        item.classList.toggle('selected', active);
+        item.setAttribute('aria-selected', String(active));
       });
-    }, { threshold: 0.5 });
-    counters.forEach(counter => counterObserver.observe(counter));
+    };
+
+    const choose = (item) => {
+      nativeSelect.value = item.dataset.value;
+      nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      sync();
+      closeCustomSelects();
+      trigger.focus();
+    };
+
+    trigger.addEventListener('click', () => {
+      const willOpen = !customSelect.classList.contains('open');
+      closeCustomSelects(customSelect);
+      customSelect.classList.toggle('open', willOpen);
+      customSelect.closest('.catalog-toolbar')?.classList.toggle('select-is-open', willOpen);
+      trigger.setAttribute('aria-expanded', String(willOpen));
+      if (willOpen) (menu.querySelector('.selected') || items[0])?.focus();
+    });
+
+    menu.addEventListener('click', (event) => {
+      const item = event.target.closest('.custom-select-option');
+      if (item) choose(item);
+    });
+
+    customSelect.addEventListener('keydown', (event) => {
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' ', 'Escape'].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === 'Escape') { closeCustomSelects(); trigger.focus(); return; }
+      if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.custom-select-option')) {
+        choose(event.target); return;
+      }
+      if (!customSelect.classList.contains('open')) { trigger.click(); return; }
+      const current = Math.max(0, items.indexOf(document.activeElement));
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+        : event.key === 'ArrowUp' ? Math.max(0, current - 1) : Math.min(items.length - 1, current + 1);
+      items[next]?.focus();
+    });
+
+    nativeSelect.addEventListener('change', sync);
+    nativeSelect._syncCustomSelect = sync;
+    sync();
+  });
+
+  window.syncCustomSelects = () => customSelects.forEach((select) => select._syncCustomSelect?.());
+
+  menuToggle?.addEventListener('click', () => {
+    const open = nav?.classList.toggle('open');
+    menuToggle.setAttribute('aria-expanded', String(Boolean(open)));
+  });
+
+  document.addEventListener('click', (event) => {
+    const copyButton = event.target.closest('[data-copy-code]');
+    if (copyButton) {
+      const code = copyButton.dataset.copyCode;
+      const copy = navigator.clipboard?.writeText
+        ? navigator.clipboard.writeText(code)
+        : Promise.reject(new Error('Clipboard API unavailable'));
+      copy.catch(() => {
+        const area = document.createElement('textarea');
+        area.value = code;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.append(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }).finally(() => {
+        copyButton.classList.add('copied');
+        const label = copyButton.querySelector('span');
+        if (!label) return;
+        const old = label.textContent;
+        label.textContent = 'Скопировано';
+        setTimeout(() => { label.textContent = old; copyButton.classList.remove('copied'); }, 1400);
+      });
+      return;
+    }
+    if (!event.target.closest('.custom-select')) closeCustomSelects();
+    if (!nav?.classList.contains('open') || event.target.closest('.nav') || event.target.closest('[data-menu-toggle]')) return;
+    nav.classList.remove('open');
+    menuToggle?.setAttribute('aria-expanded', 'false');
+  });
+
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-tab-target]');
+    if (!button) return;
+
+    const shell = button.closest('.review-tabs-shell') || document;
+    const target = button.dataset.tabTarget;
+
+    shell.querySelectorAll('[data-tab-target]').forEach((item) => item.classList.remove('active'));
+    shell.querySelectorAll('[data-tab-panel]').forEach((panel) => panel.classList.remove('active'));
+
+    button.classList.add('active');
+    shell.querySelector(`[data-tab-panel="${target}"]`)?.classList.add('active');
+  });
+
+  const autoRevealSelectors = [
+    'main .section-header',
+    'main .seo-grid > *',
+    'main .cards-grid > *',
+    'main .stats-grid > *',
+    'main .seo-project-list > *',
+    'main .seo-main > .card',
+    'main .seo-main > .seo-notice',
+    'main .seo-facts > *',
+    'main .table-wrap',
+    'main .catalog-toolbar',
+    'main .catalog-summary'
+  ];
+  document.querySelectorAll(autoRevealSelectors.join(','))
+    .forEach((element) => { if (!element.classList.contains('no-reveal')) element.classList.add('reveal'); });
+
+  ['.stats-grid', '.cards-grid', '.seo-grid', '.seo-project-list', '.seo-facts'].forEach((selector) => {
+    document.querySelectorAll(selector).forEach((group) => {
+      [...group.children].filter((item) => item.classList.contains('reveal')).forEach((item, index) => {
+        item.style.setProperty('--reveal-delay', `${Math.min(index * 55, 165)}ms`);
+      });
+    });
+  });
+
+  const revealElements = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
+
+    revealElements.forEach((element) => observer.observe(element));
+  } else {
+    revealElements.forEach((element) => element.classList.add('visible'));
   }
+
+  const currentPage = document.body.dataset.page;
+  document.querySelectorAll(`[data-page-link="${currentPage}"]`).forEach((link) => link.classList.add('active'));
+
+  document.querySelectorAll('[data-count]').forEach((element) => {
+    const target = Number(element.dataset.count) || 0;
+    const suffix = element.dataset.suffix || '';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      element.textContent = `${target}${suffix}`;
+      return;
+    }
+    const start = performance.now();
+    const animate = (time) => {
+      const progress = Math.min(1, (time - start) / 700);
+      element.textContent = `${Math.round(target * progress)}${suffix}`;
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  });
 });

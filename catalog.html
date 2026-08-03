@@ -1,295 +1,91 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AFFGOLD — Каталог проектов</title>
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
-  <body data-page="catalog">
-    <div class="site-shell">
-      <div class="bg-glow one"></div>
-      <div class="bg-glow two"></div>
-
-      <header class="header">
-        <div class="container header-inner">
-          <a class="logo" href="index.html">
-            <span class="logo-badge">♛</span>
-            <span>AFFGOLD</span>
-          </a>
-
-          <nav class="nav">
-            <a href="index.html" data-page-link="home">Главная</a>
-            <a href="review.html" data-page-link="review">Обзоры</a>
-            <a href="catalog.html" data-page-link="catalog">Казино</a>
-            <a href="#footer">О нас</a>
-          </nav>
-
-          <div class="header-actions">
-            <button
-              class="icon-btn menu-toggle"
-              type="button"
-              aria-label="Меню"
-              data-menu-toggle
-            >
-              ☰
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        <section class="page-hero">
-          <div class="container page-title reveal">
-            <div class="breadcrumbs">
-              <span>Главная</span><span>›</span><span>Казино</span>
-            </div>
-            <h1>Все проекты</h1>
-            <p>
-              Полный список демонстрационных карточек с бонусами, рейтингом,
-              вейджером и кнопками обзора.
-            </p>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="container page-layout">
-            <aside class="sidebar-sticky reveal">
-              <div class="card card-pad filter-card">
-                <div class="group">
-                  <h3>Фильтры</h3>
-                  <div class="check-list">
-                    <label class="check-row"
-                      ><span>Все бонусы</span
-                      ><input class="checkbox" type="checkbox" checked
-                    /></label>
-                    <label class="check-row"
-                      ><span>Приветственный</span
-                      ><input class="checkbox" type="checkbox"
-                    /></label>
-                    <label class="check-row"
-                      ><span>Бездепозитный</span
-                      ><input class="checkbox" type="checkbox"
-                    /></label>
-                    <label class="check-row"
-                      ><span>Фриспины</span
-                      ><input class="checkbox" type="checkbox"
-                    /></label>
-                  </div>
-                </div>
-                <div class="group">
-                  <h3>Провайдеры</h3>
-                  <select>
-                    <option>Выберите провайдера</option>
-                    <option>Pragmatic Play</option>
-                    <option>NetEnt</option>
-                    <option>BGaming</option>
-                  </select>
-                </div>
-                <div class="group">
-                  <h3>Вывод средств</h3>
-                  <select>
-                    <option>Любой</option>
-                    <option>Моментально</option>
-                    <option>До 1 часа</option>
-                    <option>До 24 часов</option>
-                  </select>
-                </div>
-                <div class="group card-actions">
-                  <button
-                    class="btn btn-primary"
-                    type="button"
-                    style="width: 100%"
-                  >
-                    Применить
-                  </button>
-                  <button
-                    class="btn btn-secondary"
-                    type="button"
-                    style="width: 100%"
-                  >
-                    Сбросить
-                  </button>
-                </div>
-              </div>
-            </aside>
-
-            <div class="reveal">
-              <div class="card table-wrap">
-                <div class="table-head">
-                  <div>Казино</div>
-                  <div>Бонус</div>
-                  <div>Вейджер</div>
-                  <div>Рейтинг</div>
-                  <div>Обзор</div>
-                </div>
-
-                <div class="table-row">
-                  <div class="casino-logo">
-                    <img src="./assets/images/joy-logo.svg" alt="Joycasino" />
-                  </div>
-                  <div>100% + 200 FS</div>
-                  <div>x35</div>
-                  <div><span class="rating-chip">★ 4.9</span></div>
-                  <div>
-                    <a class="btn btn-primary btn-sm" href="review.html"
-                      >Обзор</a
-                    >
-                  </div>
-                </div>
-                <div class="table-row">
-                  <div class="casino-logo">
-                    <img
-                      src="./assets/images/norm-logo.svg"
-                      alt="Norm Casino"
-                    />
-                  </div>
-                  <div>100% + 100 FS</div>
-                  <div>x35</div>
-                  <div><span class="rating-chip">★ 4.8</span></div>
-                  <div>
-                    <a class="btn btn-primary btn-sm" href="review.html"
-                      >Обзор</a
-                    >
-                  </div>
-                </div>
-                <div class="table-row">
-                  <div class="casino-logo">
-                    <img src="./assets/images/apex-logo.svg" alt="Apex" />
-                  </div>
-                  <div>100% + 250 FS</div>
-                  <div>x30</div>
-                  <div><span class="rating-chip">★ 4.7</span></div>
-                  <div>
-                    <a class="btn btn-primary btn-sm" href="review.html"
-                      >Обзор</a
-                    >
-                  </div>
-                </div>
-                <div class="table-row">
-                  <div class="casino-logo">
-                    <img
-                      src="./assets/images/tiger-logo.svg"
-                      alt="Tiger Casino"
-                    />
-                  </div>
-                  <div>500% + 250 FS</div>
-                  <div>x40</div>
-                  <div><span class="rating-chip">★ 4.6</span></div>
-                  <div>
-                    <a class="btn btn-primary btn-sm" href="review.html"
-                      >Обзор</a
-                    >
-                  </div>
-                </div>
-                <div class="table-row">
-                  <div class="casino-logo">
-                    <img
-                      src="./assets/images/fenix-logo.svg"
-                      alt="Fenix Casino"
-                    />
-                  </div>
-                  <div>200% + 150 FS</div>
-                  <div>x35</div>
-                  <div><span class="rating-chip">★ 4.5</span></div>
-                  <div>
-                    <a class="btn btn-primary btn-sm" href="review.html"
-                      >Обзор</a
-                    >
-                  </div>
-                </div>
-                <div class="table-row">
-                  <div class="casino-logo">
-                    <img src="./assets/images/eva-logo.svg" alt="Eva Casino" />
-                  </div>
-                  <div>150% + 100 FS</div>
-                  <div>x30</div>
-                  <div><span class="rating-chip">★ 4.3</span></div>
-                  <div>
-                    <a class="btn btn-primary btn-sm" href="review.html"
-                      >Обзор</a
-                    >
-                  </div>
-                </div>
-
-                <div class="pager">
-                  <button class="active">1</button>
-                  <button>2</button>
-                  <button>3</button>
-                  <button>…</button>
-                  <button>12</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-     <footer class="footer" id="footer">
-        <div class="container">
-          <div class="card card-pad">
-            <div class="footer-grid">
-              <div>
-                <div class="footer-title">AFFGOLD</div>
-                <p>Демо-проект</p>
-              </div>
-              <div>
-                <div class="footer-title">Навигация</div>
-                <div class="footer-links">
-                  <a href="index.html">Главная</a>
-                  <a href="catalog.html">Каталог</a>
-                  <a href="review.html">Обзор</a>
-                  <a href="bonuses.html">Бонусы</a>
-                </div>
-              </div>
-              <div>
-                <div class="footer-title">Разделы</div>
-                <div class="footer-links">
-                  <a href="#">Новости</a>
-                  <a href="#">FAQ</a>
-                  <a href="#">Контакты</a>
-                  <a href="#">Политика</a>
-                </div>
-              </div>
-              <div>
-                <div class="footer-title">Контакты</div>
-                <div class="footer-links">
-                  <a href="#">Telegram: @affgold</a>
-                  <a href="#">Email: hello@affgold.demo</a>
-                  <a href="#">Support: 24/7</a>
-                </div>
-              </div>
-            </div>
-            <div class="foot-note">
-              <span>© 2026 AFFGOLD. Все права защищены.</span>
-              <span>Работаю над этим</span>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      <div class="mobile-dock">
-        <div class="mobile-dock-grid">
-          <a href="index.html" data-page-link="home"
-            ><span class="mobile-icon">⌂</span><span>Главная</span></a
-          >
-          <a href="review.html" data-page-link="review"
-            ><span class="mobile-icon">★</span><span>Обзоры</span></a
-          >
-          <a href="bonuses.html" data-page-link="bonuses"
-            ><span class="mobile-icon">🎁</span><span>Бонусы</span></a
-          >
-          <a href="catalog.html" data-page-link="catalog"
-            ><span class="mobile-icon">◫</span><span>Казино</span></a
-          >
-          <a href="#footer"
-            ><span class="mobile-icon">☰</span><span>Меню</span></a
-          >
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Каталог онлайн-проектов: бонусы, вейджер и рейтинг</title>
+  <meta name="description" content="Каталог онлайн-проектов с фильтрами по бонусу, игровым студиям, сроку выплат, вейджеру и рейтингу." />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <link rel="canonical" href="https://www.affgoldprod.com/catalog.html" />
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script type="application/ld+json" data-catalog-schema>{"@context":"https://schema.org","@type":"ItemList","name":"Каталог проектов AFFGOLD","numberOfItems":6,"itemListElement":[{"@type":"ListItem","position":1,"url":"https://www.affgoldprod.com/reviews/joycasino/","name":"JoyCasino"},{"@type":"ListItem","position":2,"url":"https://www.affgoldprod.com/reviews/norm-casino/","name":"NORM Casino"},{"@type":"ListItem","position":3,"url":"https://www.affgoldprod.com/reviews/apex/","name":"APEX"},{"@type":"ListItem","position":4,"url":"https://www.affgoldprod.com/reviews/tiger/","name":"TIGER"},{"@type":"ListItem","position":5,"url":"https://www.affgoldprod.com/reviews/fenix/","name":"FENIX"},{"@type":"ListItem","position":6,"url":"https://www.affgoldprod.com/reviews/eva/","name":"EVA"}]}</script>
+</head>
+<body data-page="catalog">
+  <div class="site-shell">
+    <div class="bg-glow one"></div><div class="bg-glow two"></div>
+    <header class="header">
+      <div class="container header-inner">
+        <a class="logo" href="index.html"><span class="logo-badge">♛</span><span>AFFGOLD</span></a>
+        <nav class="nav">
+          <a href="catalog.html" data-page-link="catalog">Каталог</a>
+          <a href="ratings/">Рейтинги</a>
+          <a href="bonuses/">Бонусы</a>
+          <a href="guides/">Гайды</a>
+          <a href="about/">О проекте</a>
+        </nav>
+        <div class="header-actions"><button class="icon-btn menu-toggle" type="button" aria-label="Меню" data-menu-toggle>☰</button></div>
       </div>
-    </div>
+    </header>
 
-    <script src="js/main.js"></script>
-  </body>
+    <main>
+      <section class="page-hero">
+        <div class="container page-title reveal"><div class="breadcrumbs"><a href="index.html">Главная</a><span>›</span><span>Каталог</span></div><h1>Все проекты</h1><p>Выберите проект по бонусу, игровым студиям, скорости выплат или рейтингу.</p></div>
+      </section>
+
+      <section class="section">
+        <div class="container page-layout">
+          <aside class="sidebar-sticky reveal" id="catalog-filters">
+            <div class="card card-pad filter-card">
+              <div class="filter-heading"><div><span class="filter-kicker">Подбор проекта</span><h2>Фильтры</h2></div><button class="filter-close" type="button" aria-label="Закрыть фильтры" data-filter-close>×</button></div>
+              <div class="group">
+                <h3>Тип бонуса</h3>
+                <div class="check-list">
+                  <label class="check-row"><span>Приветственный</span><input class="checkbox" name="bonus-type" value="welcome" type="checkbox" /></label>
+                  <label class="check-row"><span>Бездепозитный</span><input class="checkbox" name="bonus-type" value="no-deposit" type="checkbox" /></label>
+                  <label class="check-row"><span>Фриспины</span><input class="checkbox" name="bonus-type" value="freespins" type="checkbox" /></label>
+                  <label class="check-row"><span>Кэшбэк</span><input class="checkbox" name="bonus-type" value="cashback" type="checkbox" /></label>
+                </div>
+              </div>
+              <div class="group studio-filter-group"><div class="filter-group-title"><h3>Игровые студии</h3><span id="studio-filter-count">Любые</span></div><p class="filter-help">Можно выбрать несколько — будут показаны казино, где отмечена хотя бы одна студия.</p><div id="studio-filter-list" class="studio-filter-list" aria-label="Фильтр по игровым студиям"></div></div>
+              <div class="group"><h3>Вывод средств</h3><label class="select-wrap"><span class="sr-only">Срок вывода</span><select id="payout-filter"><option value="">Любой срок</option><option value="instant">Моментально</option><option value="hour">До 1 часа</option><option value="day">До 24 часов</option></select></label></div>
+              <div class="group filter-actions"><button id="apply-filters" class="btn btn-primary" type="button">Показать результаты</button><button id="reset-filters" class="btn btn-secondary" type="button">Сбросить фильтры</button></div>
+            </div>
+          </aside>
+
+          <div class="reveal">
+            <div class="catalog-toolbar">
+              <button class="btn btn-secondary filter-open" type="button" data-filter-open aria-controls="catalog-filters" aria-expanded="false">☷ Фильтры</button>
+              <label class="catalog-search"><span class="sr-only">Поиск проекта</span><input id="catalog-search" class="field" type="search" placeholder="Поиск по названию, бонусу или студии" /></label>
+              <label class="select-wrap catalog-sort"><span class="sr-only">Сортировка</span><select id="catalog-sort"><option value="rating-desc">Сначала высокий рейтинг</option><option value="rating-asc">Сначала низкий рейтинг</option><option value="wager-asc">Сначала низкий вейджер</option><option value="name">По названию</option></select></label>
+            </div>
+            <div class="catalog-summary"><span id="catalog-count">Найдено проектов: 0</span><span>Фильтры применяются сразу</span></div>
+            <div class="card table-wrap">
+              <div class="table-head"><div>Проект</div><div>Бонус</div><div>Промокод</div><div>Вейджер</div><div>Рейтинг</div><div>Действия</div></div>
+              <div id="catalog-rows"></div>
+              <div id="catalog-empty" class="catalog-empty" hidden>По выбранным параметрам проекты не найдены.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container"><div class="card seo-panel">
+          <h2>Как выбрать проект в каталоге</h2>
+          <p>Используйте фильтры как инструмент первичного отбора, затем откройте подробный обзор. Сравнивайте не только размер бонуса, но и вейджер, срок обработки, доступные методы и дату обновления.</p>
+          <p>Подборки с дополнительными пояснениями находятся в разделах рейтингов и бонусов.</p>
+          <div class="seo-link-cloud"><a href="ratings/fast-payouts/">Быстрые выплаты</a><a href="ratings/low-wager/">Низкий вейджер</a><a href="bonuses/welcome/">Приветственные бонусы</a><a href="guides/how-to-choose/">Как выбрать проект</a></div>
+        </div></div>
+      </section>
+    </main>
+
+    <div class="filter-backdrop" data-filter-close hidden></div>
+    <footer class="footer" id="footer"><div class="container"><div class="card card-pad"><div class="footer-grid"><div><div class="footer-title">AFFGOLD</div><p class="seo-footer-note">Каталог обзоров и справочных материалов. Условия могут измениться после даты проверки.</p></div><div><div class="footer-title">Каталог</div><div class="footer-links"><a href="catalog.html">Все проекты</a><a href="ratings/">Рейтинги</a><a href="bonuses/">Бонусы</a></div></div><div><div class="footer-title">Материалы</div><div class="footer-links"><a href="guides/">Гайды</a><a href="providers/">Игровые студии</a><a href="payments/">Платежи</a></div></div><div><div class="footer-title">О проекте</div><div class="footer-links"><a href="about/methodology/">Методика</a><a href="about/affiliate-disclosure/">Партнёрское уведомление</a><a href="about/responsible-play/">Ответственная игра 18+</a><a href="contacts/">Контакты</a><a href="privacy/">Конфиденциальность</a><a href="terms/">Условия использования</a></div></div></div><div class="foot-note"><span>© 2026 AFFGOLD</span><span>18+ Играйте ответственно</span></div></div></div></footer>
+    <div class="mobile-dock"><div class="mobile-dock-grid"><a href="index.html"><span class="mobile-icon">⌂</span><span>Главная</span></a><a class="active" href="catalog.html"><span class="mobile-icon">◫</span><span>Каталог</span></a><a href="bonuses/"><span class="mobile-icon">◆</span><span>Бонусы</span></a><a href="#footer"><span class="mobile-icon">☰</span><span>Меню</span></a></div></div>
+  </div>
+
+  <script src="js/projects-data.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/catalog.js"></script>
+</body>
 </html>

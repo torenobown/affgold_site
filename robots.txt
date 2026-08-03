@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Clean-param: q&provider&studios&payout&types&sort /catalog.html
+
+Sitemap: https://www.affgoldprod.com/sitemap.xml
