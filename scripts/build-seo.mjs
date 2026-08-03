@@ -5,6 +5,13 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOMAIN = 'https://www.affgoldprod.com';
+// GitHub Pages публикует репозиторий по адресу /affgold_site/.
+// Для основного домена запустите сборку так:
+// AFFGOLD_BASE_PATH= node scripts/build-seo.mjs
+const BASE_PATH = String(process.env.AFFGOLD_BASE_PATH ?? '/affgold_site')
+  .trim()
+  .replace(/^\/*/, '/')
+  .replace(/\/+$/, '');
 const UPDATED = '2026-08-03';
 const context = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'js/projects-data.js'), 'utf8'), context);
@@ -45,18 +52,35 @@ const routeToFile = (route) => route === '/'
   ? path.join(ROOT, 'index.html')
   : path.join(ROOT, route.replace(/^\//, ''), 'index.html');
 
+const withBasePath = (url = '/') => {
+  const value = String(url);
+  if (!BASE_PATH || !value.startsWith('/') || value.startsWith('//')) return value;
+  if (value === BASE_PATH || value.startsWith(`${BASE_PATH}/`)) return value;
+  return value === '/' ? `${BASE_PATH}/` : `${BASE_PATH}${value}`;
+};
+
+// Меняем только локальные href/src. Canonical, Open Graph и JSON-LD
+// продолжают указывать на основной домен без служебного префикса GitHub.
+const applyBasePath = (html) => html.replace(
+  /(\b(?:href|src)=["'])(\/(?!\/)[^"']*)/g,
+  (match, attribute, url) => `${attribute}${withBasePath(url)}`
+);
+
 const writeRoute = (route, content, index = true) => {
   const target = routeToFile(route);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, content);
+  fs.writeFileSync(target, applyBasePath(content));
   if (index) writtenRoutes.push(route);
 };
 
-const legacyRedirect = (target, label) => `<!doctype html>
+const legacyRedirect = (target, label) => {
+  const deployTarget = withBasePath(target);
+  return `<!doctype html>
 <html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${escapeHtml(label)} — раздел перенесён</title><meta name="robots" content="noindex,follow">
-  <link rel="canonical" href="${DOMAIN}${target}"><meta http-equiv="refresh" content="0;url=${target}">
-</head><body><p>Раздел перенесён. <a href="${target}">Перейти к актуальной странице</a>.</p><script>location.replace(${JSON.stringify(target)})</script></body></html>`;
+  <link rel="canonical" href="${DOMAIN}${target}"><meta http-equiv="refresh" content="0;url=${deployTarget}">
+</head><body><p>Раздел перенесён. <a href="${deployTarget}">Перейти к актуальной странице</a>.</p><script>location.replace(${JSON.stringify(deployTarget)})</script></body></html>`;
+};
 
 const projectUrl = (project) => `/reviews/${project.slug || project.id}/`;
 const absoluteLogo = (project) => /^(data:|https?:)/i.test(project.logo)
@@ -405,6 +429,6 @@ fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), sitemap);
 const notFound = page({ route: '/404.html', active: '', eyebrow: 'Ошибка 404', h1: 'Страница не найдена', title: 'Страница не найдена — AFFGOLD', description: 'Запрошенная страница не найдена.', lead: 'Возможно, адрес изменился. Перейдите в каталог или выберите раздел сайта.', breadcrumbs: [{ name: '404', url: '/404.html' }], index: false,
   content: `<div class="seo-grid"><a class="card seo-card" href="/catalog.html"><span class="seo-card-icon">☷</span><h2>Каталог</h2><p>Все проекты и фильтры.</p><span class="seo-card-link">Открыть →</span></a><a class="card seo-card" href="/guides/"><span class="seo-card-icon">?</span><h2>Гайды</h2><p>Полезные инструкции.</p><span class="seo-card-link">Открыть →</span></a></div>`
 });
-fs.writeFileSync(path.join(ROOT, '404.html'), notFound);
+fs.writeFileSync(path.join(ROOT, '404.html'), applyBasePath(notFound));
 
 console.log(`Generated ${writtenRoutes.length} SEO routes and sitemap.xml`);
