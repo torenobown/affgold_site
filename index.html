@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AFFGOLD — Обзоры онлайн-проектов</title>
+    <meta
+      name="description"
+      content="Современный HTML/CSS/JS макет сайта обзоров онлайн-проектов: главная, каталог, обзор и бонусы."
+    />
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body data-page="home">
+    <div class="site-shell">
+      <div class="bg-glow one"></div>
+      <div class="bg-glow two"></div>
+      <div class="bg-glow three"></div>
+
+      <header class="header">
+        <div class="container header-inner">
+          <a class="logo" href="index.html">
+            <span class="logo-badge">♛</span>
+            <span>AFFGOLD</span>
+          </a>
+
+          <nav class="nav">
+            <a href="index.html" data-page-link="home">Главная</a>
+            <a href="catalog.html" data-page-link="catalog">Казино</a>
+            <a href="#footer">О нас</a>
+          </nav>
+
+          <div class="header-actions">
+            <button
+              class="icon-btn menu-toggle"
+              type="button"
+              aria-label="Меню"
+              data-menu-toggle
+            >
+              ☰
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="container hero-wrap">
+            <div class="reveal">
+              <h1>Топ онлайн проектов</h1>
+              <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-primary" href="review.html"
+                  >Смотреть проекты</a
+                >
+              </div>
+            </div>
+            <div class="hero-panel reveal floating">
+              <a class="" href="">
+              <img src="./assets/images/banner-velora.png" alt="">
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="stats-grid">
+              <article class="card stat-card reveal">
+                <div class="num" data-count="50" data-suffix="+">0+</div>
+                <div class="label">Проверенных проектов</div>
+              </article>
+              <article class="card stat-card reveal">
+                <div class="num" data-count="100" data-suffix="+">0+</div>
+                <div class="label">Актуальных бонусов</div>
+              </article>
+              <article class="card stat-card reveal">
+                <div class="num" data-count="30" data-suffix="k+">0k+</div>
+                <div class="label">Отзывы игроков</div>
+              </article>
+              <article class="card stat-card reveal">
+                <div class="num">24/7</div>
+                <div class="label">Поддержка пользователей</div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-header reveal">
+              <div>
+                <h2>Популярные проекты</h2>
+                <p>Карточки с бонусами, рейтингом и кнопками действия.</p>
+              </div>
+              <a href="catalog.html" class="link-more">Смотреть всё →</a>
+            </div>
+
+            <div class="cards-grid">
+              <article class="card project-card reveal">
+                <div class="top-row">
+                  <div class="casino-logo">
+                    <img src="./assets/images/joy-logo.svg" alt="" />
+                  </div>
+                  <span class="rating-chip">★ 4.9</span>
+                </div>
+                <div class="project-bonus">100% + 200 FS</div>
+                <div class="project-sub">На первый депозит</div>
+                <div class="card-actions">
+                  <a class="btn btn-primary btn-sm" href="review.html">Обзор</a>
+  
+                </div>
+              </article>
+
+              <article class="card project-card reveal">
+                <div class="top-row">
+                  <div class="casino-logo">
+                    <img src="./assets/images/norm-logo.svg" alt="" />
+                  </div>
+                  <span class="rating-chip">★ 4.8</span>
+                </div>
+                <div class="project-bonus">100% + 100 FS</div>
+                <div class="project-sub">Быстрый старт для новых игроков</div>
+                <div class="card-actions">
+                  <a class="btn btn-primary btn-sm" href="review.html">Обзор</a>
+                  
+                </div>
+              </article>
+
+              <article class="card project-card reveal">
+                <div class="top-row">
+                  <div class="casino-logo">
+                    <img
+                      src="./assets/images/fenix-logo.svg"
+                      alt="Fenix Casino"
+                    />
+                  </div>
+                  <span class="rating-chip">★ 4.7</span>
+                </div>
+                <div class="project-bonus">100% + 250 FS</div>
+                <div class="project-sub">Яркий welcome-бонус</div>
+                <div class="card-actions">
+                  <a class="btn btn-primary btn-sm" href="review.html">Обзор</a>
+                  
+                </div>
+              </article>
+
+              <article class="card project-card reveal">
+                <div class="top-row">
+                  <div class="casino-logo">
+                    <img src="./assets/images/eva-logo.svg" alt="Eva Casino" />
+                  </div>
+                  <span class="rating-chip">★ 4.6</span>
+                </div>
+                <div class="project-bonus">500% + 250 FS</div>
+                <div class="project-sub">Максимум по бонусной сетке</div>
+                <div class="card-actions">
+                  <a class="btn btn-primary btn-sm" href="review.html">Обзор</a>
+                  
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer" id="footer">
+        <div class="container">
+          <div class="card card-pad">
+            <div class="footer-grid">
+              <div>
+                <div class="footer-title">AFFGOLD</div>
+                <p>Демо-проект</p>
+              </div>
+              <div>
+                <div class="footer-title">Навигация</div>
+                <div class="footer-links">
+                  <a href="index.html">Главная</a>
+                  <a href="catalog.html">Каталог</a>
+                  <a href="review.html">Обзор</a>
+                  <a href="bonuses.html">Бонусы</a>
+                </div>
+              </div>
+              <div>
+                <div class="footer-title">Разделы</div>
+                <div class="footer-links">
+                  <a href="#">Новости</a>
+                  <a href="#">FAQ</a>
+                  <a href="#">Контакты</a>
+                  <a href="#">Политика</a>
+                </div>
+              </div>
+              <div>
+                <div class="footer-title">Контакты</div>
+                <div class="footer-links">
+                  <a href="#">Telegram: @affgold</a>
+                  <a href="#">Email: hello@affgold.demo</a>
+                  <a href="#">Support: 24/7</a>
+                </div>
+              </div>
+            </div>
+            <div class="foot-note">
+              <span>© 2026 AFFGOLD. Все права защищены.</span>
+              <span>Работаю над этим</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <div class="mobile-dock">
+        <div class="mobile-dock-grid">
+          <a href="index.html" data-page-link="home"
+            ><span class="mobile-icon">⌂</span><span>Главная</span></a
+          >
+          <a href="review.html" data-page-link="review"
+            ><span class="mobile-icon">★</span><span>Обзоры</span></a
+          >
+          <a href="bonuses.html" data-page-link="bonuses"
+            ><span class="mobile-icon">🎁</span><span>Бонусы</span></a
+          >
+          <a href="catalog.html" data-page-link="catalog"
+            ><span class="mobile-icon">◫</span><span>Казино</span></a
+          >
+          <a href="#footer"
+            ><span class="mobile-icon">☰</span><span>Меню</span></a
+          >
+        </div>
+      </div>
+    </div>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
