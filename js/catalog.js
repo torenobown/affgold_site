@@ -5,8 +5,6 @@
   const emptyState = document.querySelector('#catalog-empty');
   const countElement = document.querySelector('#catalog-count');
   const searchInput = document.querySelector('#catalog-search');
-  const studioList = document.querySelector('#studio-filter-list');
-  const studioCount = document.querySelector('#studio-filter-count');
   const payoutSelect = document.querySelector('#payout-filter');
   const sortSelect = document.querySelector('#catalog-sort');
   const applyButton = document.querySelector('#apply-filters');
@@ -26,23 +24,6 @@
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 
-  const studiosOf = (project) => Array.isArray(project.studios)
-    ? project.studios.filter(Boolean)
-    : (project.provider ? [project.provider] : []);
-
-  const studioUsage = new Map();
-  projects.forEach((project) => studiosOf(project).forEach((studio) => {
-    studioUsage.set(studio, (studioUsage.get(studio) || 0) + 1);
-  }));
-  const studios = [...studioUsage.keys()].sort((a, b) => a.localeCompare(b, 'ru'));
-  studioList.innerHTML = studios.map((studio) => `
-    <label class="studio-filter-option">
-      <input class="checkbox" name="studio" value="${escapeHtml(studio)}" type="checkbox">
-      <span>${escapeHtml(studio)}</span>
-      <small>${studioUsage.get(studio)}</small>
-    </label>`).join('');
-  const studioInputs = [...studioList.querySelectorAll('[name="studio"]')];
-
   const safeUrl = (value = '') => {
     try {
       const url = new URL(value, window.location.origin);
@@ -58,28 +39,25 @@
       <div>${escapeHtml(project.bonus)}</div>
       <div><button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button></div>
       <div>x${project.wager}</div>
-      <div><span class="rating-chip">★ ${project.rating.toFixed(1)}</span></div>
+      <div><span class="rating-chip">★ ${Number(project.rating).toFixed(1)}</span></div>
       <div class="catalog-actions"><a class="btn btn-secondary btn-sm" href="reviews/${encodeURIComponent(project.slug || project.id)}/">Обзор</a>${offerUrl ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(offerUrl)}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
     </article>`;
   };
 
   const selectedTypes = () => typeInputs.filter((input) => input.checked).map((input) => input.value);
-  const selectedStudios = () => studioInputs.filter((input) => input.checked).map((input) => input.value);
 
   const applyFilters = () => {
     const query = searchInput.value.trim().toLocaleLowerCase('ru');
-    const studios = selectedStudios();
     const payout = payoutSelect.value;
     const types = selectedTypes();
 
     let result = projects.filter((project) => {
-      const projectStudios = studiosOf(project);
-      const matchesSearch = !query || [project.name, project.bonus, ...projectStudios]
+      const matchesSearch = !query || [project.name, project.bonus, project.promoCode]
+        .filter(Boolean)
         .some((value) => String(value).toLocaleLowerCase('ru').includes(query));
-      const matchesStudios = studios.length === 0 || studios.some((studio) => projectStudios.includes(studio));
       const matchesPayout = !payout || project.payout === payout;
       const matchesType = types.length === 0 || types.some((type) => project.bonusTypes.includes(type));
-      return matchesSearch && matchesStudios && matchesPayout && matchesType;
+      return matchesSearch && matchesPayout && matchesType;
     });
 
     const sort = sortSelect.value;
@@ -92,11 +70,10 @@
 
     rowsContainer.innerHTML = result.map(renderRow).join('');
     countElement.textContent = `Найдено проектов: ${result.length}`;
-    studioCount.textContent = studios.length ? `Выбрано: ${studios.length}` : 'Любые';
     emptyState.hidden = result.length !== 0;
 
     const url = new URL(window.location.href);
-    const state = { q: searchInput.value.trim(), studios: studios.join(','), payout, types: types.join(','), sort };
+    const state = { q: searchInput.value.trim(), payout, types: types.join(','), sort };
     Object.entries(state).forEach(([key, value]) => value && value !== 'rating-desc'
       ? url.searchParams.set(key, value)
       : url.searchParams.delete(key));
@@ -105,7 +82,6 @@
 
   const resetFilters = () => {
     searchInput.value = '';
-    studioInputs.forEach((input) => { input.checked = false; });
     payoutSelect.value = '';
     sortSelect.value = 'rating-desc';
     typeInputs.forEach((input) => { input.checked = false; });
@@ -116,7 +92,6 @@
   applyButton.addEventListener('click', applyFilters);
   resetButton.addEventListener('click', resetFilters);
   searchInput.addEventListener('input', applyFilters);
-  studioInputs.forEach((input) => input.addEventListener('change', applyFilters));
   payoutSelect.addEventListener('change', applyFilters);
   sortSelect.addEventListener('change', applyFilters);
   typeInputs.forEach((input) => input.addEventListener('change', applyFilters));
@@ -134,8 +109,6 @@
 
   const initial = new URLSearchParams(window.location.search);
   searchInput.value = initial.get('q') || '';
-  const initialStudios = (initial.get('studios') || initial.get('provider') || '').split(',').filter(Boolean);
-  studioInputs.forEach((input) => { input.checked = initialStudios.includes(input.value); });
   payoutSelect.value = initial.get('payout') || '';
   sortSelect.value = initial.get('sort') || 'rating-desc';
   const initialTypes = (initial.get('types') || '').split(',');

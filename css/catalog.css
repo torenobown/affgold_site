@@ -25,38 +25,6 @@
   font-weight: 750;
 }
 .filter-help { margin: 8px 0 12px; color: #8089a8; font-size: .78rem; line-height: 1.45; }
-.studio-filter-list {
-  display: grid;
-  gap: 7px;
-  max-height: 252px;
-  padding: 5px 5px 5px 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(139,79,255,.55) transparent;
-}
-.studio-filter-option {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 7px 9px;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  color: #c8cee2;
-  transition: color .18s ease, background .18s ease, border-color .18s ease;
-}
-.studio-filter-option:hover {
-  color: #fff;
-  border-color: rgba(151,103,255,.2);
-  background: rgba(123,60,255,.08);
-}
-.studio-filter-option:has(input:checked) {
-  color: #fff;
-  border-color: rgba(151,103,255,.35);
-  background: linear-gradient(90deg, rgba(123,60,255,.18), rgba(178,77,255,.07));
-}
-.studio-filter-option small { color: #747d9b; font-size: .72rem; }
 .check-list, .tag-list, .simple-list {
   display: grid; gap: 12px; color: var(--text-secondary);
 }

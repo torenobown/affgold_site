@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="538" height="119" viewBox="0 0 538 119" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title desc">
+  <title id="title">VELORA</title>
+  <desc id="desc">Золотой логотип Velora на прозрачном фоне</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff0a3"/><stop offset=".16" stop-color="#d99b25"/>
+      <stop offset=".38" stop-color="#ffd76d"/><stop offset=".62" stop-color="#a65b0b"/>
+      <stop offset=".82" stop-color="#e3a432"/><stop offset="1" stop-color="#633005"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b4a08"/><stop offset=".5" stop-color="#2f1603"/><stop offset="1" stop-color="#160a01"/>
+    </linearGradient>
+    <radialGradient id="coin" cx="50%" cy="42%" r="58%">
+      <stop offset="0" stop-color="#ffe689"/><stop offset=".35" stop-color="#e6a832"/>
+      <stop offset=".72" stop-color="#a85d0b"/><stop offset="1" stop-color="#582a04"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <g font-family="Georgia, 'Times New Roman', serif" font-size="108" font-weight="700" fill="url(#gold)" stroke="url(#edge)" stroke-width="3" stroke-linejoin="round">
+      <text x="0" y="101">VEL</text><text x="347" y="101">RA</text>
+    </g>
+    <g transform="translate(294 59)">
+      <circle r="51" fill="url(#coin)" stroke="#321701" stroke-width="4"/>
+      <circle r="45" fill="none" stroke="#f6c653" stroke-width="2"/>
+      <circle r="37" fill="#bd7415" stroke="#6c3505" stroke-width="2"/>
+      <circle r="31" fill="url(#gold)" stroke="#4b2102" stroke-width="2"/>
+      <rect x="-13" y="-13" width="26" height="26" rx="1" fill="#3b1b03" stroke="#f2be49" stroke-width="3"/>
+      <rect x="-7" y="-7" width="14" height="14" rx="1" fill="#8a4c0a"/>
+      <g fill="#ffe17a" stroke="#6b3504" stroke-width="1.2">
+        <circle cy="-41" r="3.2"/><circle cx="29" cy="-29" r="3.2"/><circle cx="41" r="3.2"/>
+        <circle cx="29" cy="29" r="3.2"/><circle cy="41" r="3.2"/><circle cx="-29" cy="29" r="3.2"/>
+        <circle cx="-41" r="3.2"/><circle cx="-29" cy="-29" r="3.2"/>
+      </g>
+      <path d="M-29-28A40 40 0 0 1 29-28" fill="none" stroke="#fff2a6" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+    </g>
+  </g>
+</svg>

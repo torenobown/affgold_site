@@ -16,18 +16,11 @@
   const parseList = (value = '') => [...new Set(String(value).split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
   const logoSrc = (value = '') => /^(data:|https?:)/i.test(value) ? value : `../${value}`;
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const normalizeProject = (project) => {
-    const studios = Array.isArray(project.studios)
-      ? project.studios.filter(Boolean)
-      : (project.provider ? [project.provider] : []);
-    const { provider: legacyProvider, ...rest } = project;
-    return { ...rest, studios };
-  };
   const loadDraft = () => {
     try {
       const draft = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      return (Array.isArray(draft) ? draft : clone(sourceProjects)).map(normalizeProject);
-    } catch { return clone(sourceProjects).map(normalizeProject); }
+      return Array.isArray(draft) ? draft : clone(sourceProjects);
+    } catch { return clone(sourceProjects); }
   };
   let projects = loadDraft();
 
@@ -79,7 +72,7 @@
     list.innerHTML = projects.map((project, index) => `
       <article class="card admin-project-row">
         <img src="${escapeHtml(logoSrc(project.logo || 'assets/icons/favicon.svg'))}" alt="${escapeHtml(project.name)}">
-        <div><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.url || 'Офферная ссылка не указана')}</p><div class="admin-project-meta"><span>${escapeHtml(project.bonus)}</span><span>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</span><span>Студий: ${(project.studios || []).length}</span><span>★ ${Number(project.rating || 0).toFixed(1)}</span></div></div>
+        <div><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.url || 'Офферная ссылка не указана')}</p><div class="admin-project-meta"><span>${escapeHtml(project.bonus)}</span><span>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</span><span>★ ${Number(project.rating || 0).toFixed(1)}</span></div></div>
         <div class="admin-row-actions"><button class="btn btn-secondary btn-sm" type="button" data-edit="${index}">Изменить</button><button class="btn btn-secondary btn-sm admin-delete" type="button" data-delete="${index}">Удалить</button></div>
       </article>`).join('');
   };
@@ -94,12 +87,11 @@
     const defaults = project || {
       id: '', slug: '', name: '', logo: 'assets/icons/favicon.svg', url: '', promoCode: 'BETGOLDTEAM', rating: 4.5,
       verdict: 'Хорошо', bonus: '', bonusSubtitle: 'На первый депозит', wager: 35,
-      bonusTypes: ['welcome','freespins'], studios: [], payout: 'hour', payoutLabel: 'До 1 часа',
+      bonusTypes: ['welcome','freespins'], payout: 'hour', payoutLabel: 'До 1 часа',
       tags: ['Мобильная версия'], description: '', features: [], payments: ['VISA','Mastercard'],
       tabs: { bonuses: '', slots: '', payments: '' }
     };
     ['id','slug','name','logo','url','promoCode','rating','verdict','bonus','bonusSubtitle','wager','payout','payoutLabel','description'].forEach((name) => { field(name).value = defaults[name] ?? ''; });
-    field('studios').value = (defaults.studios || (defaults.provider ? [defaults.provider] : [])).join(', ');
     field('bonusTypes').value = (defaults.bonusTypes || []).join(', ');
     field('tags').value = (defaults.tags || []).join(', ');
     field('features').value = (defaults.features || []).join('\n');
@@ -130,7 +122,6 @@
       bonusSubtitle: field('bonusSubtitle').value.trim(),
       wager: Number(field('wager').value) || 0,
       bonusTypes: parseList(field('bonusTypes').value),
-      studios: parseList(field('studios').value),
       payout: field('payout').value,
       payoutLabel: field('payoutLabel').value.trim(),
       url: field('url').value.trim(),
@@ -148,9 +139,6 @@
     if (!form.reportValidity()) return;
     const index = Number(field('editIndex').value);
     const project = readProject();
-    if (!project.studios.length) {
-      error.textContent = 'Добавьте хотя бы одну игровую студию.'; error.hidden = false; return;
-    }
     try {
       if (new URL(project.url).protocol !== 'https:') throw new Error('HTTPS required');
     } catch {
@@ -182,7 +170,7 @@
   document.querySelector('[data-save-file]').addEventListener('click', saveDatabaseFile);
   document.querySelector('[data-reset]').addEventListener('click', () => {
     if (!confirm('Удалить черновик и вернуть данные из текущего файла?')) return;
-    projects = clone(sourceProjects).map(normalizeProject); localStorage.removeItem(STORAGE_KEY); render(); setStatus('Черновик сброшен');
+    projects = clone(sourceProjects); localStorage.removeItem(STORAGE_KEY); render(); setStatus('Черновик сброшен');
   });
   dialog.addEventListener('click', (event) => { if (event.target === dialog) closeForm(); });
   field('logoFile').addEventListener('change', () => {

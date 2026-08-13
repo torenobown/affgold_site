@@ -17,24 +17,10 @@ const context = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'js/projects-data.js'), 'utf8'), context);
 const projects = context.window.AFFGOLD_PROJECTS;
 const writtenRoutes = [];
-const studiosOf = (project) => Array.isArray(project.studios)
-  ? project.studios.filter(Boolean)
-  : (project.provider ? [project.provider] : []);
-const studioSlug = (name) => String(name).toLowerCase()
-  .replace(/[’']/g, '')
-  .replace(/&/g, ' and ')
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-|-$/g, '');
-const allStudios = [...new Set(projects.flatMap(studiosOf))]
-  .sort((a, b) => a.localeCompare(b, 'ru'));
-const projectsForStudio = (studio) => projects.filter((project) => studiosOf(project).includes(studio));
-const studioRoute = (studio) => projectsForStudio(studio).length >= 2
-  ? `/providers/${studioSlug(studio)}/`
-  : `/catalog.html?studios=${encodeURIComponent(studio)}`;
 
 // Эти папки полностью формируются генератором. Очистка удаляет устаревшие
 // обзоры после удаления проекта через админку.
-['reviews','ratings','bonuses','compare','providers','payments','guides','about','contacts','privacy','terms','news','updates']
+['reviews','ratings','bonuses','compare','payments','guides','about','contacts','privacy','terms','news','updates']
   .forEach((directory) => fs.rmSync(path.join(ROOT, directory), { recursive: true, force: true }));
 
 const escapeHtml = (value = '') => String(value)
@@ -114,7 +100,7 @@ const footer = () => `
       <div class="footer-grid">
         <div><div class="footer-title">AFFGOLD</div><p class="seo-footer-note">Независимый каталог обзоров и справочных материалов. Условия предложений проверяйте на официальном сайте выбранного проекта.</p></div>
         <div><div class="footer-title">Каталог</div><div class="footer-links"><a href="/catalog.html">Все проекты</a><a href="/ratings/">Рейтинги</a><a href="/bonuses/">Бонусы</a></div></div>
-        <div><div class="footer-title">Материалы</div><div class="footer-links"><a href="/guides/">Гайды</a><a href="/providers/">Игровые студии</a><a href="/payments/">Платежи</a></div></div>
+        <div><div class="footer-title">Материалы</div><div class="footer-links"><a href="/guides/">Гайды</a><a href="/payments/">Платежи</a></div></div>
         <div><div class="footer-title">О проекте</div><div class="footer-links"><a href="/about/methodology/">Методика рейтинга</a><a href="/about/editorial-policy/">Редакционная политика</a><a href="/about/affiliate-disclosure/">Партнёрское уведомление</a><a href="/about/responsible-play/">Ответственная игра 18+</a><a href="/contacts/">Контакты</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия использования</a></div></div>
       </div>
       <div class="foot-note"><span>© 2026 AFFGOLD</span><span>18+ Играйте ответственно</span></div>
@@ -207,18 +193,6 @@ const hubs = [
     ]
   },
   {
-    route: '/providers/', active: 'guides', eyebrow: 'Каталог игр', h1: 'Игровые студии в онлайн-казино',
-    title: 'Игровые студии онлайн-казино — каталог AFFGOLD',
-    description: 'Игровые студии из каталога AFFGOLD и казино, в которых отмечены их слоты, live-игры и другие продукты.',
-    lead: 'У одного казино десятки студий. Здесь можно выбрать разработчика и перейти к проектам, где он отмечен в нашей базе.',
-    cards: allStudios.map((studio) => ({
-      title: studio,
-      text: `Казино в каталоге: ${projectsForStudio(studio).length}.`,
-      url: studioRoute(studio),
-      icon: studio.slice(0, 1).toUpperCase()
-    }))
-  },
-  {
     route: '/payments/', active: 'guides', eyebrow: 'Платежи', h1: 'Пополнение и вывод средств',
     title: 'Способы пополнения и вывода средств — AFFGOLD',
     description: 'Справочник по банковским картам, криптовалюте и срокам обработки выплат в онлайн-проектах.',
@@ -272,16 +246,6 @@ const collectionPages = [
   { route: '/ratings/mobile/', active: 'ratings', eyebrow: 'Рейтинг', h1: 'Лучшие мобильные проекты', title: 'Мобильные онлайн-проекты 2026 — AFFGOLD', description: 'Подборка проектов с адаптивной мобильной версией по данным обзоров AFFGOLD.', lead: 'Проекты, в описании которых отмечена адаптация интерфейса под смартфоны.', items: projects.filter((p) => p.tags.some((tag) => /мобиль|адаптив/i.test(tag))), intro: ['Мобильная версия должна сохранять основные функции: вход, каталог, кассу, историю операций, настройки лимитов и поддержку.', 'Перед использованием проверьте скорость загрузки на своей сети и не устанавливайте приложения из непроверенных источников.'], list: ['удобство навигации одной рукой;', 'доступность поддержки и истории платежей;', 'корректное отображение правил бонуса.'] },
   { route: '/bonuses/welcome/', active: 'bonuses', eyebrow: 'Бонусы', h1: 'Приветственные бонусы', title: 'Приветственные бонусы онлайн-проектов 2026 — AFFGOLD', description: 'Сравнение приветственных предложений: проценты, фриспины, вейджер и дата обновления.', lead: 'Стартовые предложения из каталога с быстрым переходом к полным условиям.', items: projects.filter((p) => p.bonusTypes.includes('welcome')), intro: ['Приветственный пакет может начисляться за один или несколько депозитов. Сравнивать только максимальный процент неправильно — учитывайте вейджер и порядок начисления фриспинов.', 'До активации проверьте минимальную сумму, срок выполнения условий и допустимые способы пополнения.'], list: ['размер и количество этапов пакета;', 'вейджер и срок отыгрыша;', 'ограничение ставки и доступные игры.'] },
   { route: '/bonuses/free-spins/', active: 'bonuses', eyebrow: 'Бонусы', h1: 'Бонусы с фриспинами', title: 'Фриспины за регистрацию и депозит — AFFGOLD', description: 'Предложения с бесплатными вращениями: количество FS, вейджер и условия активации.', lead: 'Сравнение предложений с фриспинами из базы AFFGOLD.', items: projects.filter((p) => p.bonusTypes.includes('freespins')), intro: ['Количество фриспинов не показывает их реальную ценность без информации о номинале вращения и правилах отыгрыша выигрыша.', 'Иногда вращения выдаются частями в течение нескольких дней. Пропущенная активация может привести к потере очередной части.'], list: ['номинал одного вращения;', 'игра, для которой выданы FS;', 'срок активации и вейджер выигрыша.'] },
-  ...allStudios.filter((studio) => projectsForStudio(studio).length >= 2).map((studio) => ({
-    route: `/providers/${studioSlug(studio)}/`, active: 'guides', eyebrow: 'Игровая студия',
-    h1: `Казино с играми ${studio}`, title: `${studio}: казино и игровые проекты — AFFGOLD`,
-    description: `Казино из каталога AFFGOLD, где в базе отмечена игровая студия ${studio}.`,
-    lead: `Проекты, в игровых каталогах которых отмечена студия ${studio}.`,
-    parent: { name: 'Игровые студии', url: '/providers/' },
-    items: projectsForStudio(studio),
-    intro: [`${studio} — одна из студий в библиотеке перечисленных проектов, а не единственный поставщик игр.`, 'Состав каталога может зависеть от региона и меняться со временем, поэтому наличие конкретной игры нужно проверить на сайте казино.'],
-    list: ['найдите игру через поиск по названию;', 'проверьте региональную доступность;', 'уточните вклад игры в отыгрыш бонуса.']
-  })),
   { route: '/payments/crypto/', active: 'guides', eyebrow: 'Платежи', h1: 'Проекты с Bitcoin и Tether', title: 'Проекты с криптовалютой: Bitcoin и Tether — AFFGOLD', description: 'Подборка проектов, где Bitcoin или Tether указаны среди платежных методов.', lead: 'Список из базы AFFGOLD и базовые правила безопасной криптовалютной операции.', items: projects.filter((p) => p.payments.some((m) => ['Bitcoin','Tether'].includes(m))), intro: ['Криптовалютный перевод обычно нельзя отменить. Проверяйте сеть, адрес и минимальную сумму перед подтверждением транзакции.', 'Совпадение названия токена недостаточно: одна и та же валюта может работать в нескольких сетях с разными адресами.'], list: ['сеть перевода должна совпадать;', 'учитывайте комиссию сети;', 'проверьте количество подтверждений.'] },
   { route: '/payments/bank-cards/', active: 'guides', eyebrow: 'Платежи', h1: 'Пополнение банковской картой', title: 'Пополнение и вывод на банковские карты — AFFGOLD', description: 'Проекты с VISA, Mastercard или МИР в базе AFFGOLD и чек-лист перед платежом.', lead: 'Карточные методы из базы проектов и факторы, влияющие на проведение операции.', items: projects.filter((p) => p.payments.some((m) => ['VISA','Mastercard','МИР'].includes(m))), intro: ['Наличие логотипа карты в списке методов не гарантирует доступность операции для каждого банка и региона.', 'До пополнения проверьте комиссию, минимальную сумму, имя получателя и возможность возврата на тот же метод.'], list: ['карта оформлена на владельца аккаунта;', 'лимиты банка позволяют операцию;', 'данные вводятся на защищённой странице.'] }
   ,{ route: '/bonuses/cashback/', active: 'bonuses', eyebrow: 'Бонусы', h1: 'Кэшбэк в онлайн-проектах', title: 'Кэшбэк: проекты и условия возврата — AFFGOLD', description: 'Проекты, где кэшбэк указан среди типов предложения, и правила проверки периода, процента и вейджера.', lead: 'Сравните карточки и обязательно уточните, от какой суммы рассчитывается возврат.', items: projects.filter((p) => p.bonusTypes.includes('cashback')), intro: ['Кэшбэк может рассчитываться от чистого проигрыша за день, неделю или другой период. Процент без базы расчёта ничего не говорит о фактической сумме.', 'Также проверьте, начисляется ли возврат реальными или бонусными средствами и применяется ли к нему вейджер.'], list: ['период расчёта;','минимальная сумма;','тип баланса после начисления;','ограничение на вывод.'] }
@@ -372,7 +336,6 @@ informationalPages.forEach((item) => {
 
 projects.forEach((project) => {
   const route = projectUrl(project);
-  const projectStudios = studiosOf(project);
   const schema = {
     '@context': 'https://schema.org', '@type': 'Article', headline: `Обзор ${project.name}`,
     description: project.description, dateModified: project.lastUpdated || UPDATED,
@@ -384,17 +347,16 @@ projects.forEach((project) => {
     <div class="seo-review-brand"><div class="seo-review-logo"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></div><div><h2>${escapeHtml(project.name)}</h2><div class="review-rating-line"><span class="review-stars">★★★★★</span><strong>${project.rating.toFixed(1)}</strong><span>${escapeHtml(project.verdict)}</span></div></div></div>
     <div class="seo-review-bonus"><span>Приветственное предложение</span><strong>${escapeHtml(project.bonus)}</strong><div class="offer-actions"><button class="promo-code" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>${offerUrl(project) ? `<a class="btn btn-primary" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">Перейти на сайт</a>` : ''}</div></div>
   </section>
-  <div class="seo-facts"><div class="seo-fact"><span>Вейджер</span><strong>x${project.wager}</strong></div><div class="seo-fact"><span>Обработка</span><strong>${escapeHtml(project.payoutLabel)}</strong></div><div class="seo-fact"><span>Игровые студии</span><strong>${projectStudios.length}</strong></div><div class="seo-fact"><span>Методы</span><strong>${project.payments.length}</strong></div></div>
+  <div class="seo-facts"><div class="seo-fact"><span>Вейджер</span><strong>x${project.wager}</strong></div><div class="seo-fact"><span>Обработка</span><strong>${escapeHtml(project.payoutLabel)}</strong></div><div class="seo-fact"><span>Методы</span><strong>${project.payments.length}</strong></div></div>
   ${textPanel('overview', `Обзор ${project.name}`, [project.description, `По данным карточки проекта, стартовое предложение — ${project.bonus}, требование к отыгрышу — x${project.wager}. Перед активацией необходимо сверить актуальные правила и региональную доступность.`])}
   ${textPanel('features', 'Что отмечено в обзоре', ['При подготовке карточки редакция фиксирует основные пользовательские параметры.'], project.features)}
   ${textPanel('bonus', 'Бонусные условия', [project.tabs.bonuses, 'Особое внимание уделите базе расчёта вейджера, максимальной ставке, сроку отыгрыша и списку игр, которые не участвуют в выполнении условий.'])}
-  <section class="card seo-panel" id="studios"><h2>Игровые студии</h2><p>${escapeHtml(project.tabs.slots || 'В каталоге представлены игры нескольких студий.')}</p><div class="seo-link-cloud">${projectStudios.map((studio) => `<a href="${studioRoute(studio)}">${escapeHtml(studio)}</a>`).join('')}</div><p>Это не полный список всей библиотеки: состав игр зависит от региона и может обновляться. Проверяйте наличие нужной игры через поиск на сайте казино.</p></section>
   ${textPanel('payments', 'Пополнение и вывод', [project.tabs.payments, `В базе указаны методы: ${project.payments.join(', ')}. Фактическая доступность зависит от региона, валюты и статуса аккаунта.`])}
   <section class="card seo-panel" id="related"><h2>Похожие материалы</h2><div class="seo-link-cloud">${related.map((item) => `<a href="${projectUrl(item)}">${escapeHtml(item.name)}</a>`).join('')}<a href="/bonuses/">Все бонусы</a><a href="/ratings/">Рейтинги</a></div></section>
   <div class="seo-notice"><strong>Редакционная отметка:</strong> оценка помогает сравнивать проекты, но не гарантирует выплату или результат. Условия могут измениться после даты проверки.</div>`;
-  writeRoute(route, page({ route, active: 'catalog', eyebrow: 'Подробный обзор', h1: `Обзор ${project.name}`, title: `${project.name}: обзор, бонус ${project.bonus} и условия — AFFGOLD`, description: `${project.name}: обзор бонуса ${project.bonus}, вейджер x${project.wager}, игровые студии, платежные методы и важные условия.`, lead: project.description,
+  writeRoute(route, page({ route, active: 'catalog', eyebrow: 'Подробный обзор', h1: `Обзор ${project.name}`, title: `${project.name}: обзор, бонус ${project.bonus} и условия — AFFGOLD`, description: `${project.name}: обзор бонуса ${project.bonus}, вейджер x${project.wager}, платежные методы и важные условия.`, lead: project.description,
     breadcrumbs: [{ name: 'Каталог', url: '/catalog.html' }, { name: project.name, url: route }], content,
-    sidebar: sidebar([{ id: 'overview', title: 'Обзор' }, { id: 'features', title: 'Особенности' }, { id: 'bonus', title: 'Бонус' }, { id: 'studios', title: 'Игровые студии' }, { id: 'payments', title: 'Платежи' }, { id: 'related', title: 'Похожие' }]), schema,
+    sidebar: sidebar([{ id: 'overview', title: 'Обзор' }, { id: 'features', title: 'Особенности' }, { id: 'bonus', title: 'Бонус' }, { id: 'payments', title: 'Платежи' }, { id: 'related', title: 'Похожие' }]), schema,
     updated: project.lastUpdated || UPDATED
   }));
 });
