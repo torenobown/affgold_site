@@ -9,13 +9,8 @@ const DOMAIN = String(process.env.AFFGOLD_SITE_URL || 'https://www.affgoldprod.c
 if (!/^https:\/\/[^/]+$/i.test(DOMAIN)) {
   throw new Error('AFFGOLD_SITE_URL должен быть HTTPS-адресом без пути, например https://example.com.');
 }
-// GitHub Pages публикует репозиторий по адресу /affgold_site/.
-// Для основного домена запустите сборку так:
-// AFFGOLD_BASE_PATH= node scripts/build-seo.mjs
-const BASE_PATH = String(process.env.AFFGOLD_BASE_PATH ?? '/affgold_site')
-  .trim()
-  .replace(/^\/*/, '/')
-  .replace(/\/+$/, '');
+// Внутренние ссылки генерируются относительными. Одна и та же сборка работает
+// локально, на GitHub Pages в подпапке репозитория и на основном домене.
 const UPDATED = '2026-08-03';
 const projects = loadProjects(ROOT);
 const writtenRoutes = [];
@@ -53,24 +48,38 @@ const routeToFile = (route) => route === '/'
   ? path.join(BUILD_ROOT, 'index.html')
   : path.join(BUILD_ROOT, route.replace(/^\//, ''), 'index.html');
 
-const withBasePath = (url = '/') => {
-  const value = String(url);
-  if (!BASE_PATH || !value.startsWith('/') || value.startsWith('//')) return value;
-  if (value === BASE_PATH || value.startsWith(`${BASE_PATH}/`)) return value;
-  return value === '/' ? `${BASE_PATH}/` : `${BASE_PATH}${value}`;
+const routeDocument = (route) => {
+  if (route === '/') return '/index.html';
+  if (route.endsWith('/')) return `${route}index.html`;
+  return route;
 };
 
-// Меняем только локальные href/src. Canonical, Open Graph и JSON-LD
-// продолжают указывать на основной домен без служебного префикса GitHub.
-const applyBasePath = (html) => html.replace(
+const relativeSiteUrl = (route, url = '/') => {
+  const value = String(url);
+  if (!value.startsWith('/') || value.startsWith('//')) return value;
+
+  const fromDirectory = path.posix.dirname(routeDocument(route));
+  const queryIndex = value.search(/[?#]/);
+  const targetPath = queryIndex >= 0 ? value.slice(0, queryIndex) : value;
+  const suffix = queryIndex >= 0 ? value.slice(queryIndex) : '';
+  let relative = path.posix.relative(fromDirectory, targetPath || '/');
+
+  if (!relative) relative = './';
+  if (targetPath.endsWith('/') && !relative.endsWith('/')) relative += '/';
+  return `${relative}${suffix}`;
+};
+
+// Меняем только локальные href/src на относительные пути. Canonical, Open Graph
+// и JSON-LD продолжают указывать на основной домен абсолютными URL.
+const applyRelativePaths = (html, route) => html.replace(
   /(\b(?:href|src)=["'])(\/(?!\/)[^"']*)/g,
-  (match, attribute, url) => `${attribute}${withBasePath(url)}`
+  (match, attribute, url) => `${attribute}${relativeSiteUrl(route, url)}`
 );
 
 const writeRoute = (route, content, index = true) => {
   const target = routeToFile(route);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, applyBasePath(content));
+  fs.writeFileSync(target, applyRelativePaths(content, route));
   if (index) writtenRoutes.push(route);
 };
 
@@ -139,8 +148,8 @@ const assertBuildComplete = () => {
   if (missing.length) throw new Error(`Сборка неполная. Не созданы: ${[...new Set(missing)].join(', ')}`);
 };
 
-const legacyRedirect = (target, label) => {
-  const deployTarget = withBasePath(target);
+const legacyRedirect = (route, target, label) => {
+  const deployTarget = relativeSiteUrl(route, target);
   return `<!DOCTYPE html>
 <html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${escapeHtml(label)} — раздел перенесён</title><meta name="robots" content="noindex,follow">
@@ -592,7 +601,7 @@ projects.forEach((project) => {
   ['/news/', '/bonuses/', 'Новости и акции'],
   ['/updates/', '/about/methodology/', 'Журнал обновлений'],
   ['/about/authors/', '/about/editorial-policy/', 'Авторы']
-].forEach(([route, target, label]) => writeRoute(route, legacyRedirect(target, label), false));
+].forEach(([route, target, label]) => writeRoute(route, legacyRedirect(route, target, label), false));
 
 const catalogPath = path.join(ROOT, 'catalog.html');
 const catalogSchema = {
@@ -614,7 +623,7 @@ const catalogWithSchema = catalogSource.replace(
 const catalogWithCards = replaceManagedBlock(
   catalogWithSchema,
   'CATALOG_PROJECTS',
-  applyBasePath(projectCardArticles(rankedProjects))
+  applyRelativePaths(projectCardArticles(rankedProjects), '/catalog.html')
 ).replace(
   /(<span id="catalog-count" aria-live="polite">).*?(<\/span>)/,
   `$1Найдено проектов: ${projects.length}$2`
@@ -632,7 +641,7 @@ const homeSource = fs.readFileSync(homePath, 'utf8')
 const homeWithCards = replaceManagedBlock(
   homeSource,
   'HOME_PROJECTS',
-  applyBasePath(projectCardArticles(rankedProjects.slice(0, 4)))
+  applyRelativePaths(projectCardArticles(rankedProjects.slice(0, 4)), '/')
 ).replace(
   /(<div class="num" data-project-count data-count=")\d+(" data-suffix="">)\d+(<\/div>)/,
   `$1${projects.length}$2${projects.length}$3`
@@ -659,7 +668,7 @@ fs.writeFileSync(
 const notFound = page({ route: '/404.html', active: '', eyebrow: 'Ошибка 404', h1: 'Страница не найдена', title: 'Страница не найдена — AFFGOLD', description: 'Запрошенная страница не найдена.', lead: 'Возможно, адрес изменился. Перейдите в каталог или выберите раздел сайта.', breadcrumbs: [{ name: '404', url: '/404.html' }], index: false,
   content: `<div class="seo-grid"><a class="card seo-card" href="/catalog.html"><span class="seo-card-icon">☷</span><h2>Каталог</h2><p>Все проекты и фильтры.</p><span class="seo-card-link">Открыть →</span></a><a class="card seo-card" href="/guides/"><span class="seo-card-icon">?</span><h2>Гайды</h2><p>Полезные инструкции.</p><span class="seo-card-link">Открыть →</span></a></div>`
 });
-fs.writeFileSync(path.join(BUILD_ROOT, '404.html'), applyBasePath(notFound));
+fs.writeFileSync(path.join(BUILD_ROOT, '404.html'), applyRelativePaths(notFound, '/404.html'));
 
 assertBuildComplete();
 publishGeneratedSite();

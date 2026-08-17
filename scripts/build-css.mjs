@@ -17,8 +17,8 @@ const STYLE_SOURCES = [
   'motion.css'
 ];
 const PAGE_BUNDLES = {
-  'home-page.css': ['base.css', 'components.css', 'home.css', 'responsive.css', 'project-themes.css', 'project-theme-tokens.css', 'motion.css'],
-  'catalog-page.css': ['base.css', 'components.css', 'catalog.css', 'responsive.css', 'project-themes.css', 'project-theme-tokens.css', 'motion.css'],
+  'home-page.css': ['base.css', 'components.css', 'home.css', 'seo.css', 'responsive.css', 'project-themes.css', 'project-theme-tokens.css', 'motion.css'],
+  'catalog-page.css': ['base.css', 'components.css', 'catalog.css', 'seo.css', 'responsive.css', 'project-themes.css', 'project-theme-tokens.css', 'motion.css'],
   'seo-page.css': ['base.css', 'components.css', 'seo.css', 'responsive.css', 'project-themes.css', 'project-theme-tokens.css', 'motion.css'],
   'review-page.css': ['base.css', 'components.css', 'review.css', 'seo.css', 'responsive.css', 'project-themes.css', 'project-theme-tokens.css', 'motion.css']
 };
