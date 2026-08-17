@@ -207,6 +207,119 @@ const projectCards = (items) => `<div class="project-grid">${items.map((project)
 const textPanel = (id, title, paragraphs, list = []) => `<section class="card seo-panel" id="${id}"><h2>${escapeHtml(title)}</h2>${paragraphs.map((item) => `<p>${escapeHtml(item)}</p>`).join('')}${list.length ? `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}</section>`;
 const sidebar = (links = []) => `<div class="card seo-toc"><h2>На этой странице</h2>${links.map((link) => `<a href="#${link.id}">${escapeHtml(link.title)}</a>`).join('')}</div><div class="card seo-trust"><strong>Как мы работаем</strong><p>Сравниваем условия из базы проекта, отмечаем дату проверки и не скрываем, что предложения могут измениться.</p><a class="seo-card-link" href="/about/methodology/">Методика рейтинга →</a></div>`;
 
+const REVIEW_ICONS = {
+  document: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 12h6M10 16h6"/>',
+  gift: '<rect x="3" y="9" width="18" height="12" rx="2"/><path d="M12 9v12M3 13h18M12 9H8.5a2.5 2.5 0 1 1 2.1-3.85L12 9Zm0 0h3.5a2.5 2.5 0 1 0-2.1-3.85L12 9Z"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-5"/>',
+  wallet: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H18a2 2 0 0 1 2 2v2H6.5A2.5 2.5 0 0 0 4 10.5v7A2.5 2.5 0 0 0 6.5 20H20V8"/><path d="M16 12h5v4h-5a2 2 0 1 1 0-4Z"/>',
+  games: '<rect x="3" y="5" width="18" height="14" rx="4"/><path d="M8 10v4M6 12h4M15.5 11.5h.01M18 14h.01"/>',
+  headset: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M18 19c0 1.1-.9 2-2 2h-3M4 14h3v5H5a2 2 0 0 1-2-2v-1a2 2 0 0 1 1-2Zm16 0h-3v5h2a2 2 0 0 0 2-2v-1a2 2 0 0 0-1-2Z"/>',
+  spark: '<path d="m13 2-1 7h6l-8 13 1-8H5l8-12Z"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>'
+};
+
+const reviewIcon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${REVIEW_ICONS[name] || REVIEW_ICONS.spark}</svg>`;
+const reviewDate = (value = UPDATED) => {
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : String(value);
+};
+const reviewScore = (value) => Math.max(0, Math.min(5, Number(value) || 0));
+const reviewStars = (value) => {
+  const score = reviewScore(value);
+  return `<span class="review-stars" style="--review-stars:${score * 20}%" role="img" aria-label="${score.toFixed(1)} из 5"><span aria-hidden="true">★★★★★</span></span>`;
+};
+const reviewScoreRows = (scores = {}) => [
+  ['reliability', 'Надёжность', 'shield'],
+  ['bonuses', 'Бонусы', 'gift'],
+  ['slots', 'Игровой каталог', 'games'],
+  ['payouts', 'Выплаты', 'wallet'],
+  ['support', 'Поддержка', 'headset']
+].map(([key, label, icon]) => {
+  const score = reviewScore(scores[key]);
+  return `<div class="review-score-row"><span class="review-score-row__icon">${reviewIcon(icon)}</span><span class="review-score-row__label" id="review-score-${key}">${label}</span><strong>${score.toFixed(1)}</strong><meter class="review-score-row__bar" min="0" max="5" value="${score.toFixed(1)}" aria-labelledby="review-score-${key}">${score.toFixed(1)} из 5</meter></div>`;
+}).join('');
+
+const reviewPage = (project, related, schema) => {
+  const route = projectUrl(project);
+  const updated = project.lastUpdated || UPDATED;
+  const canonical = `${DOMAIN}${route}`;
+  const title = cleanSeoText(`${project.name}: обзор, бонус ${project.bonus} и условия — AFFGOLD`);
+  const description = cleanSeoText(`${project.name}: обзор бонуса ${project.bonus}, вейджер x${project.wager}, платежные методы и важные условия.`);
+  const items = [{ name: 'Главная', url: '/' }, { name: 'Каталог', url: '/catalog.html' }, { name: project.name, url: route }];
+  const externalUrl = offerUrl(project);
+  const promoCode = project.promoCode || 'BETGOLDTEAM';
+  const schemas = [breadcrumbSchema(items), schema];
+
+  return `<!DOCTYPE html>
+<html lang="ru"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="${canonical}"><link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
+  <meta property="og:type" content="article"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${canonical}">
+  <link rel="stylesheet" href="/css/styles.css">
+  ${schemas.map((item) => `<script type="application/ld+json">${JSON.stringify(item).replaceAll('</script', '<\\/script')}</script>`).join('\n  ')}
+</head><body data-page="catalog" class="review-page"><div class="site-shell"><div class="bg-glow one"></div><div class="bg-glow two"></div>
+${nav('catalog')}
+<main class="review-main">
+  <section class="review-intro"><div class="container">
+    ${breadcrumbsHtml(items)}
+    <div class="review-dashboard">
+      <article class="card review-hero-card reveal" id="overview">
+        <div class="review-hero-card__copy">
+          <div class="review-hero-card__brand">
+            <div class="review-hero-card__logo"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></div>
+            <div><span class="review-kicker">Редакционный обзор</span><h1>Обзор <span>${escapeHtml(project.name)}</span></h1><div class="review-hero-card__rating">${reviewStars(project.rating)}<strong>${project.rating.toFixed(1)}</strong><span>${escapeHtml(project.verdict)}</span></div></div>
+          </div>
+          <p class="review-hero-card__lead">${escapeHtml(project.description)}</p>
+          <p class="review-hero-card__summary">Стартовое предложение — ${escapeHtml(project.bonus)}, требование к отыгрышу — x${project.wager}. Перед активацией проверьте актуальные правила и доступность в своём регионе.</p>
+          <div class="review-tags">${project.tags.map((tag) => `<span class="review-tag">${escapeHtml(tag)}</span>`).join('')}</div>
+          <dl class="review-hero-facts"><div><dt>Бонус</dt><dd>${escapeHtml(project.bonus)}</dd></div><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Проверено</dt><dd><time datetime="${escapeHtml(updated)}">${reviewDate(updated)}</time></dd></div></dl>
+        </div>
+        <div class="review-hero-card__art" aria-hidden="true"><img src="/assets/images/hero-casino.svg" alt=""></div>
+      </article>
+
+      <aside class="card review-score-card reveal" id="rating" aria-labelledby="review-score-title">
+        <div class="review-score-card__head"><div><span class="review-kicker">Оценка редакции</span><h2 id="review-score-title">Коротко о проекте</h2></div><span class="review-score-card__badge">5 критериев</span></div>
+        <div class="review-score-list">${reviewScoreRows(project.scores)}</div>
+        <div class="review-score-total"><div><span>Общая оценка</span><strong>${project.rating.toFixed(1)}</strong><small>/ 5</small></div>${reviewStars(project.rating)}<p>${escapeHtml(project.verdict)}</p></div>
+        <a class="review-inline-link" href="/about/methodology/">Как считаем рейтинг <span aria-hidden="true">→</span></a>
+      </aside>
+
+      <aside class="card review-cta-card reveal" aria-labelledby="review-cta-title">
+        <img class="review-cta-card__art" src="/assets/images/bonus-orb.svg" alt="" aria-hidden="true">
+        <div class="review-cta-card__content"><span class="review-kicker">Предложение проекта</span><h2 id="review-cta-title">Готовы перейти?</h2><p>Сначала сверьте правила и региональную доступность на стороне проекта.</p><strong class="review-cta-card__bonus">${escapeHtml(project.bonus)}</strong><button class="promo-code" type="button" data-copy-code="${escapeHtml(promoCode)}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(promoCode)}</strong></button>${externalUrl ? `<a class="btn btn-primary" href="${escapeHtml(externalUrl)}" target="_blank" rel="sponsored nofollow noopener">Открыть предложение</a>` : ''}<small>18+. Условия и доступность могут меняться.</small></div>
+      </aside>
+
+      <section class="review-highlight-grid" aria-label="Главное об условиях">
+        <article class="card review-highlight-card reveal" id="features"><span class="review-card-icon">${reviewIcon('document')}</span><h2>Что отмечено в обзоре</h2><ul class="review-feature-list">${project.features.slice(0, 4).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul></article>
+        <article class="card review-highlight-card reveal"><span class="review-card-icon">${reviewIcon('gift')}</span><h2>Бонусные условия</h2><strong class="review-highlight-value review-highlight-value--gold">${escapeHtml(project.bonus)}</strong><p>${escapeHtml(project.bonusSubtitle)}</p><a class="review-inline-link" href="#bonus-details">Подробнее об условиях <span aria-hidden="true">→</span></a></article>
+        <article class="card review-highlight-card reveal"><span class="review-card-icon">${reviewIcon('shield')}</span><h2>Условия отыгрыша</h2><strong class="review-highlight-value">x${project.wager}</strong><p>Указанное требование применяется к сумме бонуса. Сверьте ограничения перед активацией.</p><a class="review-inline-link" href="/guides/what-is-wager/">Что такое вейджер <span aria-hidden="true">→</span></a></article>
+      </section>
+
+      <div class="review-notice reveal" role="note"><span class="review-notice__icon">${reviewIcon('info')}</span><p><strong>Важно:</strong> обзор носит информационный характер. Перед активацией проверьте актуальные правила, ограничения и региональную доступность на сайте проекта.</p></div>
+    </div>
+  </div></section>
+
+  <section class="section review-content-section"><div class="container">
+    <div class="section-header reveal"><div><h2>Подробности обзора</h2><p>Основные условия собраны в спокойном формате без лишних повторов.</p></div></div>
+    <div class="review-body-layout">
+      <article class="card review-article reveal">
+        <section class="review-article__section" id="bonus-details"><span class="review-card-icon review-card-icon--small">${reviewIcon('gift')}</span><div><h2>Бонус и важные условия</h2><p>${escapeHtml(project.tabs.bonuses)}</p><p>Обратите внимание на базу расчёта вейджера, максимальную ставку, срок отыгрыша и список исключённых игр.</p></div></section>
+        <section class="review-article__section" id="games"><span class="review-card-icon review-card-icon--small">${reviewIcon('games')}</span><div><h2>Игровой каталог</h2><p>${escapeHtml(project.tabs.slots)}</p><p>Состав библиотеки и доступность отдельных категорий могут зависеть от региона и меняться со временем.</p></div></section>
+        <section class="review-article__section" id="payments"><span class="review-card-icon review-card-icon--small">${reviewIcon('wallet')}</span><div><h2>Пополнение и вывод</h2><p>${escapeHtml(project.tabs.payments)}</p><p>Заявленный срок обработки: <strong>${escapeHtml(project.payoutLabel)}</strong>. Фактическое время зависит от метода, валюты и статуса аккаунта.</p><ul class="review-payment-list" aria-label="Поддерживаемые платёжные методы">${project.payments.map((method) => `<li>${escapeHtml(method)}</li>`).join('')}</ul></div></section>
+      </article>
+      <aside class="review-body-aside" aria-label="Навигация и методика обзора">
+        <nav class="card review-toc reveal" aria-label="Содержание обзора"><h2>На этой странице</h2><a href="#overview">Краткий обзор</a><a href="#rating">Оценка проекта</a><a href="#features">Особенности</a><a href="#bonus-details">Бонус</a><a href="#games">Игры</a><a href="#payments">Платежи</a><a href="#related">Похожие проекты</a></nav>
+        <div class="card review-method-card reveal"><span class="review-card-icon review-card-icon--small">${reviewIcon('shield')}</span><h2>Как мы работаем</h2><p>Фиксируем данные из карточки проекта, дату проверки и отдельно отмечаем условия, которые могут измениться.</p><a class="review-inline-link" href="/about/methodology/">Методика рейтинга <span aria-hidden="true">→</span></a></div>
+      </aside>
+    </div>
+  </div></section>
+
+  <section class="section review-related-section" id="related"><div class="container"><div class="section-header reveal"><div><h2>Похожие проекты</h2><p>Ещё несколько обзоров с тем же форматом данных.</p></div><a class="link-more" href="/catalog.html">Весь каталог →</a></div>${projectCards(related)}</div></section>
+</main>${footer()}${mobileDock('catalog')}</div><script src="/js/main.js"></script></body></html>`;
+};
+
 const hubs = [
   {
     route: '/ratings/', active: 'ratings', eyebrow: 'Подборки', h1: 'Рейтинги онлайн-проектов',
@@ -385,22 +498,7 @@ projects.forEach((project) => {
     mainEntityOfPage: `${DOMAIN}${route}`
   };
   const related = projects.filter((item) => item.id !== project.id).slice(0, 3);
-  const content = `<section class="card seo-review-top">
-    <div class="seo-review-brand"><div class="seo-review-logo"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></div><div><h2>${escapeHtml(project.name)}</h2><div class="review-rating-line"><span class="review-stars">★★★★★</span><strong>${project.rating.toFixed(1)}</strong><span>${escapeHtml(project.verdict)}</span></div></div></div>
-    <div class="seo-review-bonus"><span>Приветственное предложение</span><strong>${escapeHtml(project.bonus)}</strong><div class="offer-actions"><button class="promo-code" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>${offerUrl(project) ? `<a class="btn btn-primary" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">Перейти на сайт</a>` : ''}</div></div>
-  </section>
-  <div class="seo-facts"><div class="seo-fact"><span>Вейджер</span><strong>x${project.wager}</strong></div><div class="seo-fact"><span>Обработка</span><strong>${escapeHtml(project.payoutLabel)}</strong></div><div class="seo-fact"><span>Методы</span><strong>${project.payments.length}</strong></div></div>
-  ${textPanel('overview', `Обзор ${project.name}`, [project.description, `По данным карточки проекта, стартовое предложение — ${project.bonus}, требование к отыгрышу — x${project.wager}. Перед активацией необходимо сверить актуальные правила и региональную доступность.`])}
-  ${textPanel('features', 'Что отмечено в обзоре', ['При подготовке карточки редакция фиксирует основные пользовательские параметры.'], project.features)}
-  ${textPanel('bonus', 'Бонусные условия', [project.tabs.bonuses, 'Особое внимание уделите базе расчёта вейджера, максимальной ставке, сроку отыгрыша и списку игр, которые не участвуют в выполнении условий.'])}
-  ${textPanel('payments', 'Пополнение и вывод', [project.tabs.payments, `В базе указаны методы: ${project.payments.join(', ')}. Фактическая доступность зависит от региона, валюты и статуса аккаунта.`])}
-  <section class="seo-related-projects" id="related"><h2>Похожие проекты</h2>${projectCards(related)}<div class="seo-link-cloud"><a href="/bonuses/">Все бонусы</a><a href="/ratings/">Рейтинги</a></div></section>
-  <div class="seo-notice"><strong>Редакционная отметка:</strong> оценка помогает сравнивать проекты, но не гарантирует выплату или результат. Условия могут измениться после даты проверки.</div>`;
-  writeRoute(route, page({ route, active: 'catalog', eyebrow: 'Подробный обзор', h1: `Обзор ${project.name}`, title: `${project.name}: обзор, бонус ${project.bonus} и условия — AFFGOLD`, description: `${project.name}: обзор бонуса ${project.bonus}, вейджер x${project.wager}, платежные методы и важные условия.`, lead: project.description,
-    breadcrumbs: [{ name: 'Каталог', url: '/catalog.html' }, { name: project.name, url: route }], content,
-    sidebar: sidebar([{ id: 'overview', title: 'Обзор' }, { id: 'features', title: 'Особенности' }, { id: 'bonus', title: 'Бонус' }, { id: 'payments', title: 'Платежи' }, { id: 'related', title: 'Похожие' }]), schema,
-    updated: project.lastUpdated || UPDATED
-  }));
+  writeRoute(route, reviewPage(project, related, schema));
 });
 
 [
@@ -427,7 +525,8 @@ fs.writeFileSync(catalogPath, catalogSource.replace(
 ));
 
 const sitemapRoutes = ['/', '/catalog.html', ...writtenRoutes];
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...new Set(sitemapRoutes)].map((route) => `  <url><loc>${xmlEscape(`${DOMAIN}${route}`)}</loc><lastmod>${UPDATED}</lastmod></url>`).join('\n')}\n</urlset>\n`;
+const reviewUpdatedByRoute = new Map(projects.map((project) => [projectUrl(project), project.lastUpdated || UPDATED]));
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...new Set(sitemapRoutes)].map((route) => `  <url><loc>${xmlEscape(`${DOMAIN}${route}`)}</loc><lastmod>${reviewUpdatedByRoute.get(route) || UPDATED}</lastmod></url>`).join('\n')}\n</urlset>\n`;
 fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), sitemap);
 
 const notFound = page({ route: '/404.html', active: '', eyebrow: 'Ошибка 404', h1: 'Страница не найдена', title: 'Страница не найдена — AFFGOLD', description: 'Запрошенная страница не найдена.', lead: 'Возможно, адрес изменился. Перейдите в каталог или выберите раздел сайта.', breadcrumbs: [{ name: '404', url: '/404.html' }], index: false,

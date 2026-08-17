@@ -258,14 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'main .stats-grid > *',
     'main .seo-main > .card',
     'main .seo-main > .seo-notice',
-    'main .seo-facts > *',
     'main .catalog-toolbar',
     'main .catalog-summary'
   ];
   document.querySelectorAll(autoRevealSelectors.join(','))
     .forEach((element) => { if (!element.classList.contains('no-reveal')) element.classList.add('reveal'); });
 
-  ['.stats-grid', '.project-grid', '.seo-grid', '.seo-facts'].forEach((selector) => {
+  ['.stats-grid', '.project-grid', '.seo-grid'].forEach((selector) => {
     document.querySelectorAll(selector).forEach((group) => {
       [...group.children].filter((item) => item.classList.contains('reveal')).forEach((item, index) => {
         item.style.setProperty('--reveal-delay', `${Math.min(index * 55, 165)}ms`);
