@@ -13,5 +13,12 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+echo Proverka gotovogo saita...
+node scripts\check-site.mjs
+if errorlevel 1 (
+  echo Sait sobran, no proverka nashla oshibki. Publikaciya ostanovlena.
+  pause
+  exit /b 1
+)
 echo Gotovo. Stranicy i sitemap obnovleny.
 pause

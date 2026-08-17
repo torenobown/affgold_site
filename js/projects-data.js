@@ -1,6 +1,6 @@
 /**
  * Единая база проектов.
- * Чтобы добавить новый проект, достаточно добавить новый объект в массив.
+ * Редактируйте через /admin/ и запускайте пересборку сайта.
  */
 window.AFFGOLD_PROJECTS = [
   {
@@ -8,7 +8,14 @@ window.AFFGOLD_PROJECTS = [
     "slug": "joycasino",
     "lastUpdated": "2026-08-03",
     "name": "JoyCasino",
-    "logo": "assets/images/joy-logo.svg",
+    "logo": "assets/images/joy-logo.webp",
+    "theme": {
+      "primary": "#ffc857",
+      "secondary": "#ce7e1d",
+      "buttonStart": "#ffd064",
+      "buttonEnd": "#c77c1c",
+      "onPrimary": "#1a1003"
+    },
     "rating": 4.9,
     "verdict": "Отлично",
     "bonus": "100% + 200 FS",
@@ -61,6 +68,13 @@ window.AFFGOLD_PROJECTS = [
     "lastUpdated": "2026-08-03",
     "name": "NORM Casino",
     "logo": "assets/images/norm-logo.svg",
+    "theme": {
+      "primary": "#ff3a46",
+      "secondary": "#b3000c",
+      "buttonStart": "#d30100",
+      "buttonEnd": "#85040a",
+      "onPrimary": "#ffffff"
+    },
     "rating": 4.8,
     "verdict": "Отлично",
     "bonus": "100% + 300 FS",
@@ -112,6 +126,13 @@ window.AFFGOLD_PROJECTS = [
     "lastUpdated": "2026-08-03",
     "name": "APEX",
     "logo": "assets/images/apex-logo.svg",
+    "theme": {
+      "primary": "#00b6ff",
+      "secondary": "#3853ff",
+      "buttonStart": "#0079b8",
+      "buttonEnd": "#1838b7",
+      "onPrimary": "#ffffff"
+    },
     "rating": 4.7,
     "verdict": "Очень хорошо",
     "bonus": "225% + 575 FS",
@@ -162,6 +183,13 @@ window.AFFGOLD_PROJECTS = [
     "lastUpdated": "2026-08-03",
     "name": "TIGER",
     "logo": "assets/images/tiger-logo.svg",
+    "theme": {
+      "primary": "#ff9d24",
+      "secondary": "#ffd05a",
+      "buttonStart": "#ffb13b",
+      "buttonEnd": "#e27818",
+      "onPrimary": "#1a0e04"
+    },
     "rating": 4.6,
     "verdict": "Очень хорошо",
     "bonus": "225% + 600 FS",
@@ -212,6 +240,13 @@ window.AFFGOLD_PROJECTS = [
     "lastUpdated": "2026-08-03",
     "name": "FENIX",
     "logo": "assets/images/fenix-logo.svg",
+    "theme": {
+      "primary": "#ef8a25",
+      "secondary": "#da2030",
+      "buttonStart": "#b92a23",
+      "buttonEnd": "#81121f",
+      "onPrimary": "#ffffff"
+    },
     "rating": 4.5,
     "verdict": "Хорошо",
     "bonus": "225% + 600 FS",
@@ -262,6 +297,13 @@ window.AFFGOLD_PROJECTS = [
     "lastUpdated": "2026-08-03",
     "name": "EVA",
     "logo": "assets/images/eva-logo.svg",
+    "theme": {
+      "primary": "#ffd679",
+      "secondary": "#dca93e",
+      "buttonStart": "#ffdf94",
+      "buttonEnd": "#c28a2d",
+      "onPrimary": "#171107"
+    },
     "rating": 4.3,
     "verdict": "Хорошо",
     "bonus": "225% + 900 FS",
@@ -313,6 +355,13 @@ window.AFFGOLD_PROJECTS = [
     "lastUpdated": "2026-08-13",
     "name": "VELORA",
     "logo": "assets/images/velora-logo.svg",
+    "theme": {
+      "primary": "#f2be49",
+      "secondary": "#a85d0b",
+      "buttonStart": "#f6c653",
+      "buttonEnd": "#b96f15",
+      "onPrimary": "#171006"
+    },
     "rating": 4.8,
     "verdict": "Отлично",
     "bonus": "125% + 400 FS",

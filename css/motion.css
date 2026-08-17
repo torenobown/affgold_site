@@ -1,0 +1,41 @@
+/* Единые правила движения, hover и доступности. Подключается последним. */
+:root {
+  --motion-fast: 180ms;
+  --motion-normal: 260ms;
+  --motion-reveal: 550ms;
+  --ease-out: cubic-bezier(.2,.75,.3,1);
+}
+
+/* Первый экран не ждёт JavaScript и IntersectionObserver: это сохраняет быстрый LCP. */
+.motion-ready :is(.hero, .page-hero, .seo-hero, .review-intro) .reveal {
+  opacity: 1;
+  translate: 0 0;
+  transition: none;
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+  .reveal,
+  .reveal.visible {
+    opacity: 1 !important;
+    translate: none !important;
+    will-change: auto !important;
+  }
+  .hero-panel,
+  .hero-panel img,
+  .project-card,
+  .seo-card,
+  .review-highlight-card,
+  .btn,
+  .promo-code,
+  .mobile-side-menu__nav a:active {
+    transform: none !important;
+    scale: 1 !important;
+  }
+}

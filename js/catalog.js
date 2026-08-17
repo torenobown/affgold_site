@@ -1,6 +1,118 @@
-/** Рабочая фильтрация и динамическая отрисовка каталога. */
+/** Фильтрация готовых HTML-карточек без повторного рендера и скачков макета. */
 (() => {
-  const projects = window.AFFGOLD_PROJECTS || [];
+  /** Улучшает native select только на странице каталога; без JS остаётся обычный select. */
+  const setupCustomSelects = () => {
+    const nativeSelects = [...document.querySelectorAll('.select-wrap select')];
+
+    const closeAll = (except = null) => {
+      document.querySelectorAll('.custom-select.open').forEach((select) => {
+        if (select === except) return;
+        select.classList.remove('open');
+        select.closest('.catalog-toolbar')?.classList.remove('select-is-open');
+        select.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
+      });
+    };
+
+    nativeSelects.forEach((nativeSelect, selectIndex) => {
+      const customSelect = document.createElement('div');
+      const trigger = document.createElement('button');
+      const menu = document.createElement('div');
+      const listboxId = `custom-select-${selectIndex}`;
+      const accessibleName = nativeSelect.closest('label')?.querySelector('.sr-only')?.textContent?.trim();
+
+      customSelect.className = 'custom-select';
+      trigger.className = 'custom-select-trigger';
+      trigger.type = 'button';
+      trigger.setAttribute('aria-haspopup', 'listbox');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-controls', listboxId);
+      if (accessibleName) trigger.setAttribute('aria-label', accessibleName);
+      menu.className = 'custom-select-menu';
+      menu.id = listboxId;
+      menu.setAttribute('role', 'listbox');
+
+      [...nativeSelect.options].forEach((option, optionIndex) => {
+        const item = document.createElement('button');
+        item.className = 'custom-select-option';
+        item.type = 'button';
+        item.dataset.value = option.value;
+        item.dataset.index = String(optionIndex);
+        item.textContent = option.textContent;
+        item.setAttribute('role', 'option');
+        menu.append(item);
+      });
+
+      nativeSelect.classList.add('custom-select-native');
+      nativeSelect.tabIndex = -1;
+      nativeSelect.setAttribute('aria-hidden', 'true');
+      nativeSelect.closest('.select-wrap')?.classList.add('custom-select-ready');
+      nativeSelect.after(customSelect);
+      customSelect.append(trigger, menu);
+
+      const items = [...menu.querySelectorAll('.custom-select-option')];
+      const sync = () => {
+        const selected = nativeSelect.options[nativeSelect.selectedIndex] || nativeSelect.options[0];
+        trigger.replaceChildren();
+        const label = document.createElement('span');
+        const icon = document.createElement('i');
+        label.textContent = selected?.textContent || '';
+        icon.setAttribute('aria-hidden', 'true');
+        trigger.append(label, icon);
+        items.forEach((item) => {
+          const active = item.dataset.value === nativeSelect.value;
+          item.classList.toggle('selected', active);
+          item.setAttribute('aria-selected', String(active));
+        });
+      };
+
+      const choose = (item) => {
+        nativeSelect.value = item.dataset.value;
+        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        sync();
+        closeAll();
+        trigger.focus();
+      };
+
+      trigger.addEventListener('click', () => {
+        const willOpen = !customSelect.classList.contains('open');
+        closeAll(customSelect);
+        customSelect.classList.toggle('open', willOpen);
+        customSelect.closest('.catalog-toolbar')?.classList.toggle('select-is-open', willOpen);
+        trigger.setAttribute('aria-expanded', String(willOpen));
+        if (willOpen) (menu.querySelector('.selected') || items[0])?.focus();
+      });
+      menu.addEventListener('click', (event) => {
+        const item = event.target.closest('.custom-select-option');
+        if (item) choose(item);
+      });
+      customSelect.addEventListener('keydown', (event) => {
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' ', 'Escape'].includes(event.key)) return;
+        event.preventDefault();
+        if (event.key === 'Escape') { closeAll(); trigger.focus(); return; }
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.custom-select-option')) {
+          choose(event.target);
+          return;
+        }
+        if (!customSelect.classList.contains('open')) { trigger.click(); return; }
+        const current = Math.max(0, items.indexOf(document.activeElement));
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+          : event.key === 'ArrowUp' ? Math.max(0, current - 1) : Math.min(items.length - 1, current + 1);
+        items[next]?.focus();
+      });
+      customSelect.addEventListener('focusout', (event) => {
+        if (!customSelect.contains(event.relatedTarget)) closeAll();
+      });
+      nativeSelect.addEventListener('change', sync);
+      nativeSelect._syncCustomSelect = sync;
+      sync();
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.custom-select')) closeAll();
+    });
+    return () => nativeSelects.forEach((select) => select._syncCustomSelect?.());
+  };
+
   const projectsContainer = document.querySelector('#catalog-projects');
   const emptyState = document.querySelector('#catalog-empty');
   const countElement = document.querySelector('#catalog-count');
@@ -9,42 +121,16 @@
   const sortSelect = document.querySelector('#catalog-sort');
   const applyButton = document.querySelector('#apply-filters');
   const resetButton = document.querySelector('#reset-filters');
-  const typeInputs = [...document.querySelectorAll('[name="bonus-type"]')];
+  const typeInputs = [...document.querySelectorAll('[data-bonus-type]')];
   const filterPanel = document.querySelector('#catalog-filters');
   const filterOpen = document.querySelector('[data-filter-open]');
   const filterCloseButtons = document.querySelectorAll('[data-filter-close]');
   const filterBackdrop = document.querySelector('.filter-backdrop');
+  const compactFilters = window.matchMedia('(max-width: 1280px)');
 
   if (!projectsContainer) return;
-
-  const escapeHtml = (value = '') => String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-
-  const safeUrl = (value = '') => {
-    try {
-      const url = new URL(value, window.location.origin);
-      return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
-    } catch { return ''; }
-  };
-
-  const renderCard = (project) => {
-    const offerUrl = safeUrl(project.url);
-    return `
-    <article class="card project-card" data-project-theme="${escapeHtml(project.id)}" aria-label="${escapeHtml(project.name)}">
-      <div class="project-card__head">
-        <a class="project-card__logo" href="reviews/${encodeURIComponent(project.slug || project.id)}/" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${escapeHtml(project.logo)}" alt="${escapeHtml(project.name)}" /></a>
-        <div class="project-card__rating"><span class="rating-chip">★ ${Number(project.rating).toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
-      </div>
-      <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
-      <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${Number(project.wager)}</dd></div></dl>
-      <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>
-      <div class="project-card__actions"><a class="btn btn-secondary btn-sm" href="reviews/${encodeURIComponent(project.slug || project.id)}/">Обзор</a>${offerUrl ? `<a class="btn btn-primary btn-project btn-sm" href="${escapeHtml(offerUrl)}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
-    </article>`;
-  };
+  const projectCards = [...projectsContainer.querySelectorAll('.project-card')];
+  const syncCustomSelects = setupCustomSelects();
 
   const selectedTypes = () => typeInputs.filter((input) => input.checked).map((input) => input.value);
 
@@ -53,24 +139,31 @@
     const payout = payoutSelect.value;
     const types = selectedTypes();
 
-    let result = projects.filter((project) => {
-      const matchesSearch = !query || [project.name, project.bonus, project.promoCode]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase('ru').includes(query));
-      const matchesPayout = !payout || project.payout === payout;
-      const matchesType = types.length === 0 || types.some((type) => project.bonusTypes.includes(type));
+    const result = projectCards.filter((card) => {
+      const cardTypes = (card.dataset.bonusTypes || '').split(',').filter(Boolean);
+      const matchesSearch = !query || (card.dataset.projectSearch || '').toLocaleLowerCase('ru').includes(query);
+      const matchesPayout = !payout || card.dataset.payout === payout;
+      const matchesType = types.length === 0 || types.some((type) => cardTypes.includes(type));
       return matchesSearch && matchesPayout && matchesType;
     });
 
     const sort = sortSelect.value;
-    result = [...result].sort((a, b) => {
-      if (sort === 'rating-asc') return a.rating - b.rating;
-      if (sort === 'wager-asc') return a.wager - b.wager;
-      if (sort === 'name') return a.name.localeCompare(b.name, 'ru');
-      return b.rating - a.rating;
+    result.sort((a, b) => {
+      if (sort === 'rating-asc') return Number(a.dataset.rating) - Number(b.dataset.rating);
+      if (sort === 'wager-asc') return Number(a.dataset.wager) - Number(b.dataset.wager);
+      if (sort === 'name') return a.dataset.projectName.localeCompare(b.dataset.projectName, 'ru');
+      return Number(b.dataset.rating) - Number(a.dataset.rating);
     });
 
-    projectsContainer.innerHTML = result.map(renderCard).join('');
+    const visible = new Set(result);
+    projectCards.forEach((card) => { card.hidden = !visible.has(card); });
+    const desiredOrder = [...result, ...projectCards.filter((card) => !visible.has(card))];
+    const currentOrder = [...projectsContainer.children];
+    if (desiredOrder.some((card, index) => card !== currentOrder[index])) {
+      const fragment = document.createDocumentFragment();
+      desiredOrder.forEach((card) => fragment.append(card));
+      projectsContainer.append(fragment);
+    }
     countElement.textContent = `Найдено проектов: ${result.length}`;
     emptyState.hidden = result.length !== 0;
 
@@ -87,7 +180,7 @@
     payoutSelect.value = '';
     sortSelect.value = 'rating-desc';
     typeInputs.forEach((input) => { input.checked = false; });
-    window.syncCustomSelects?.();
+    syncCustomSelects();
     applyFilters();
   };
 
@@ -99,15 +192,45 @@
   typeInputs.forEach((input) => input.addEventListener('change', applyFilters));
 
   const setFiltersOpen = (open) => {
-    filterPanel.classList.toggle('open', open);
-    filterBackdrop.hidden = !open;
-    document.body.classList.toggle('filters-open', open);
-    filterOpen?.setAttribute('aria-expanded', String(open));
+    const compact = compactFilters.matches;
+    const nextOpen = compact && open;
+    const wasOpen = filterPanel.classList.contains('open');
+    filterPanel.classList.toggle('open', nextOpen);
+    filterPanel.inert = compact && !nextOpen;
+    filterBackdrop.hidden = !nextOpen;
+    document.body.classList.toggle('filters-open', nextOpen);
+    filterOpen?.setAttribute('aria-expanded', String(nextOpen));
+    if (compact) {
+      filterPanel.setAttribute('role', 'dialog');
+      filterPanel.setAttribute('aria-modal', 'true');
+      filterPanel.setAttribute('aria-label', 'Фильтры каталога');
+    } else {
+      filterPanel.removeAttribute('role');
+      filterPanel.removeAttribute('aria-modal');
+      filterPanel.removeAttribute('aria-label');
+    }
+    if (nextOpen) requestAnimationFrame(() => filterPanel.querySelector('[data-filter-close]')?.focus());
+    else if (wasOpen) filterOpen?.focus();
   };
   filterOpen?.addEventListener('click', () => setFiltersOpen(true));
   filterCloseButtons.forEach((button) => button.addEventListener('click', () => setFiltersOpen(false)));
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setFiltersOpen(false); });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && filterPanel.classList.contains('open')) {
+      setFiltersOpen(false);
+      return;
+    }
+    if (event.key !== 'Tab' || !filterPanel.classList.contains('open')) return;
+    const focusable = [...filterPanel.querySelectorAll('input, select, button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      .filter((element) => !element.inert && element.getAttribute('aria-hidden') !== 'true');
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first || !last) return;
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
   applyButton.addEventListener('click', () => setFiltersOpen(false));
+  compactFilters.addEventListener('change', () => setFiltersOpen(false));
+  setFiltersOpen(false);
 
   const initial = new URLSearchParams(window.location.search);
   searchInput.value = initial.get('q') || '';
@@ -116,5 +239,6 @@
   const initialTypes = (initial.get('types') || '').split(',');
   typeInputs.forEach((input) => { input.checked = initialTypes.includes(input.value); });
 
+  syncCustomSelects();
   applyFilters();
 })();

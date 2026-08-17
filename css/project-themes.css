@@ -7,56 +7,6 @@
   --project-on-primary: #fff;
 }
 
-:where([data-project-theme="joycasino"]) {
-  --project-primary-rgb: 255 200 87;
-  --project-secondary-rgb: 206 126 29;
-  --project-button-start: #ffd064;
-  --project-button-end: #c77c1c;
-  --project-on-primary: #1a1003;
-}
-:where([data-project-theme="norm"]) {
-  --project-primary-rgb: 255 58 70;
-  --project-secondary-rgb: 179 0 12;
-  --project-button-start: #d30100;
-  --project-button-end: #85040a;
-  --project-on-primary: #fff;
-}
-:where([data-project-theme="apex"]) {
-  --project-primary-rgb: 0 182 255;
-  --project-secondary-rgb: 56 83 255;
-  --project-button-start: #0079b8;
-  --project-button-end: #1838b7;
-  --project-on-primary: #fff;
-}
-:where([data-project-theme="tiger"]) {
-  --project-primary-rgb: 255 157 36;
-  --project-secondary-rgb: 255 208 90;
-  --project-button-start: #ffb13b;
-  --project-button-end: #e27818;
-  --project-on-primary: #1a0e04;
-}
-:where([data-project-theme="fenix"]) {
-  --project-primary-rgb: 239 138 37;
-  --project-secondary-rgb: 218 32 48;
-  --project-button-start: #b92a23;
-  --project-button-end: #81121f;
-  --project-on-primary: #fff;
-}
-:where([data-project-theme="eva"]) {
-  --project-primary-rgb: 255 214 121;
-  --project-secondary-rgb: 220 169 62;
-  --project-button-start: #ffdf94;
-  --project-button-end: #c28a2d;
-  --project-on-primary: #171107;
-}
-:where([data-project-theme="velora"]) {
-  --project-primary-rgb: 242 190 73;
-  --project-secondary-rgb: 168 93 11;
-  --project-button-start: #f6c653;
-  --project-button-end: #b96f15;
-  --project-on-primary: #171006;
-}
-
 /* Неон карточки присутствует сразу; hover лишь слегка усиливает глубину. */
 .card.project-card {
   isolation: isolate;

@@ -1,0 +1,5 @@
+node_modules/
+.affgold-build-*/
+.affgold-backup-*/
+.lighthouseci/
+lighthouse-*.json

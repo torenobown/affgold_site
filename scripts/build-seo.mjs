@@ -1,10 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { buildStyles } from './build-css.mjs';
+import { loadProjects } from './lib/projects.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DOMAIN = 'https://www.affgoldprod.com';
+const DOMAIN = String(process.env.AFFGOLD_SITE_URL || 'https://www.affgoldprod.com').replace(/\/+$/, '');
+if (!/^https:\/\/[^/]+$/i.test(DOMAIN)) {
+  throw new Error('AFFGOLD_SITE_URL должен быть HTTPS-адресом без пути, например https://example.com.');
+}
 // GitHub Pages публикует репозиторий по адресу /affgold_site/.
 // Для основного домена запустите сборку так:
 // AFFGOLD_BASE_PATH= node scripts/build-seo.mjs
@@ -13,21 +17,32 @@ const BASE_PATH = String(process.env.AFFGOLD_BASE_PATH ?? '/affgold_site')
   .replace(/^\/*/, '/')
   .replace(/\/+$/, '');
 const UPDATED = '2026-08-03';
-const context = { window: {} };
-vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'js/projects-data.js'), 'utf8'), context);
-const projects = context.window.AFFGOLD_PROJECTS;
+const projects = loadProjects(ROOT);
 const writtenRoutes = [];
+const GENERATED_DIRECTORIES = ['reviews','ratings','bonuses','compare','payments','guides','about','contacts','privacy','terms','news','updates'];
+const GENERATED_FILES = [
+  'index.html', 'catalog.html', 'review.html', '404.html', 'robots.txt', 'sitemap.xml',
+  'css/site.css', 'css/home-page.css', 'css/catalog-page.css',
+  'css/seo-page.css', 'css/review-page.css', 'css/project-theme-tokens.css'
+];
 
-// Эти папки полностью формируются генератором. Очистка удаляет устаревшие
-// обзоры после удаления проекта через админку.
-['reviews','ratings','bonuses','compare','payments','guides','about','contacts','privacy','terms','news','updates']
-  .forEach((directory) => fs.rmSync(path.join(ROOT, directory), { recursive: true, force: true }));
+// Сначала формируем полный сайт рядом с рабочими файлами. Публикация начинается
+// только после успешного рендера всех страниц, поэтому ошибка не удалит старую версию.
+const BUILD_ROOT = fs.mkdtempSync(path.join(ROOT, '.affgold-build-'));
+process.on('exit', () => fs.rmSync(BUILD_ROOT, { recursive: true, force: true }));
+buildStyles(projects, { outputDirectory: path.join(BUILD_ROOT, 'css') });
+
+/* ---------- Безопасная запись и URL ---------- */
 
 const escapeHtml = (value = '') => String(value)
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 
 const xmlEscape = (value = '') => escapeHtml(value);
+const formatRussianDate = (isoDate) => {
+  const [year, month, day] = String(isoDate).split('-');
+  return year && month && day ? `${day}.${month}.${year}` : String(isoDate);
+};
 const cleanSeoText = (value = '') => String(value)
   .replaceAll('AFFGOLD', '')
   .replace(/\s+([.,:;])/g, '$1')
@@ -35,8 +50,8 @@ const cleanSeoText = (value = '') => String(value)
   .replace(/\s+[—-]\s*$/g, '')
   .trim();
 const routeToFile = (route) => route === '/'
-  ? path.join(ROOT, 'index.html')
-  : path.join(ROOT, route.replace(/^\//, ''), 'index.html');
+  ? path.join(BUILD_ROOT, 'index.html')
+  : path.join(BUILD_ROOT, route.replace(/^\//, ''), 'index.html');
 
 const withBasePath = (url = '/') => {
   const value = String(url);
@@ -59,9 +74,74 @@ const writeRoute = (route, content, index = true) => {
   if (index) writtenRoutes.push(route);
 };
 
+const replaceManagedBlock = (source, name, content) => {
+  const start = `<!-- AFFGOLD:${name}:START -->`;
+  const end = `<!-- AFFGOLD:${name}:END -->`;
+  const startIndex = source.indexOf(start);
+  const endIndex = source.indexOf(end);
+  if (startIndex < 0 || endIndex < startIndex) throw new Error(`Не найдены маркеры ${name}.`);
+  return `${source.slice(0, startIndex + start.length)}\n${content}\n${source.slice(endIndex)}`;
+};
+
+const publishGeneratedSite = () => {
+  const backupRoot = fs.mkdtempSync(path.join(ROOT, '.affgold-backup-'));
+  const targets = [...GENERATED_DIRECTORIES, ...GENERATED_FILES];
+  const backedUp = new Set();
+  let mutationStarted = false;
+
+  try {
+    // На Windows IDE может держать открытый каталог обзора и запрещать rename.
+    // Поэтому сначала создаём полный recoverable backup, затем заменяем содержимое.
+    targets.forEach((target) => {
+      const destination = path.join(ROOT, target);
+      const backup = path.join(backupRoot, target);
+      if (fs.existsSync(destination)) {
+        fs.mkdirSync(path.dirname(backup), { recursive: true });
+        fs.cpSync(destination, backup, { recursive: true });
+        backedUp.add(target);
+      }
+    });
+
+    mutationStarted = true;
+    targets.forEach((target) => {
+      const source = path.join(BUILD_ROOT, target);
+      const destination = path.join(ROOT, target);
+      fs.rmSync(destination, { recursive: true, force: true });
+      if (!fs.existsSync(source)) return;
+      fs.mkdirSync(path.dirname(destination), { recursive: true });
+      fs.cpSync(source, destination, { recursive: true });
+    });
+  } catch (error) {
+    if (mutationStarted) {
+      targets.forEach((target) => {
+        const backup = path.join(backupRoot, target);
+        const destination = path.join(ROOT, target);
+        fs.rmSync(destination, { recursive: true, force: true });
+        if (backedUp.has(target)) {
+          fs.mkdirSync(path.dirname(destination), { recursive: true });
+          fs.cpSync(backup, destination, { recursive: true });
+        }
+      });
+    }
+    throw error;
+  } finally {
+    fs.rmSync(backupRoot, { recursive: true, force: true });
+  }
+};
+
+const assertBuildComplete = () => {
+  const missing = [...GENERATED_DIRECTORIES, ...GENERATED_FILES]
+    .filter((target) => !fs.existsSync(path.join(BUILD_ROOT, target)));
+  projects.forEach((project) => {
+    const review = path.join(BUILD_ROOT, 'reviews', project.slug || project.id, 'index.html');
+    if (!fs.existsSync(review)) missing.push(path.relative(BUILD_ROOT, review));
+  });
+  if (missing.length) throw new Error(`Сборка неполная. Не созданы: ${[...new Set(missing)].join(', ')}`);
+};
+
 const legacyRedirect = (target, label) => {
   const deployTarget = withBasePath(target);
-  return `<!doctype html>
+  return `<!DOCTYPE html>
 <html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${escapeHtml(label)} — раздел перенесён</title><meta name="robots" content="noindex,follow">
   <link rel="canonical" href="${DOMAIN}${target}"><meta http-equiv="refresh" content="0;url=${deployTarget}">
@@ -78,6 +158,8 @@ const offerUrl = (project) => {
     return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
   } catch { return ''; }
 };
+
+/* ---------- Общие части страниц ---------- */
 
 const nav = (active) => `
   <header class="header">
@@ -170,21 +252,22 @@ const page = ({ route, title, description, eyebrow, h1, lead, active, breadcrumb
     '@context': 'https://schema.org', '@type': 'WebPage', name: h1, description, url: canonical,
     dateModified: updated, publisher: { '@type': 'Organization', name: 'AFFGOLD', url: DOMAIN }
   }];
-  return `<!doctype html>
+  return `<!DOCTYPE html>
 <html lang="ru"><head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${escapeHtml(metaTitle)}</title><meta name="description" content="${escapeHtml(metaDescription)}">
   <meta name="robots" content="${index ? 'index,follow,max-image-preview:large' : 'noindex,follow'}">
   <link rel="canonical" href="${canonical}"><link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
   <meta property="og:type" content="article"><meta property="og:title" content="${escapeHtml(metaTitle)}"><meta property="og:description" content="${escapeHtml(metaDescription)}"><meta property="og:url" content="${canonical}">
-  <link rel="stylesheet" href="/css/styles.css">
+  <script>document.documentElement.classList.add('motion-ready');window.__affgoldMotionFallback=setTimeout(()=>document.documentElement.classList.remove('motion-ready'),3000)</script>
+  <link rel="stylesheet" href="/css/seo-page.css">
   ${schemas.map((item) => `<script type="application/ld+json">${JSON.stringify(item).replaceAll('</script', '<\\/script')}</script>`).join('\n  ')}
 </head><body data-page="${active || ''}"><div class="site-shell"><div class="bg-glow one"></div><div class="bg-glow two"></div>
 ${nav(active)}
 <main>
   <section class="seo-hero"><div class="container seo-hero-inner reveal">
     ${breadcrumbsHtml(items)}<span class="seo-eyebrow">${escapeHtml(eyebrow)}</span><h1>${escapeHtml(h1)}</h1><p class="seo-lead">${escapeHtml(lead)}</p>
-    <div class="seo-meta"><span>Обновлено: <time datetime="${updated}">03.08.2026</time></span><span>Автор: редакция AFFGOLD</span><span>18+</span></div>
+    <div class="seo-meta"><span>Обновлено: <time datetime="${updated}">${formatRussianDate(updated)}</time></span><span>Автор: редакция AFFGOLD</span><span>18+</span></div>
   </div></section>
   <section class="section"><div class="container ${sidebar ? 'seo-layout' : ''}"><div class="seo-main">${content}</div>${sidebar ? `<aside class="seo-sidebar">${sidebar}</aside>` : ''}</div></section>
 </main>${footer()}${mobileDock(active)}</div><script src="/js/main.js"></script></body></html>`;
@@ -192,20 +275,23 @@ ${nav(active)}
 
 const cardGrid = (cards) => `<div class="seo-grid">${cards.map((card) => `<a class="card seo-card" href="${card.url}"><span class="seo-card-icon">${card.icon || '◆'}</span><h2>${escapeHtml(card.title)}</h2><p>${escapeHtml(card.text)}</p><span class="seo-card-link">Открыть →</span></a>`).join('')}</div>`;
 
-const projectCards = (items) => `<div class="project-grid">${items.map((project) => `
-  <article class="card project-card" data-project-theme="${escapeHtml(project.id)}" aria-label="${escapeHtml(project.name)}">
+const projectCardArticles = (items) => items.map((project) => `
+  <article class="card project-card reveal" data-project-theme="${escapeHtml(project.id)}" data-project-id="${escapeHtml(project.id)}" data-project-name="${escapeHtml(project.name)}" data-project-search="${escapeHtml(`${project.name} ${project.bonus} ${project.promoCode || ''}`)}" data-payout="${escapeHtml(project.payout)}" data-bonus-types="${escapeHtml(project.bonusTypes.join(','))}" data-rating="${project.rating}" data-wager="${project.wager}" aria-label="${escapeHtml(project.name)}">
     <div class="project-card__head">
-      <a class="project-card__logo" href="${projectUrl(project)}" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></a>
+      <a class="project-card__logo" href="${projectUrl(project)}" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${escapeHtml(absoluteLogo(project))}" alt="${escapeHtml(project.name)}" width="96" height="38" loading="lazy" decoding="async"></a>
       <div class="project-card__rating"><span class="rating-chip">★ ${project.rating.toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
     </div>
     <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
     <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${project.wager}</dd></div></dl>
     <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>
     <div class="project-card__actions"><a class="btn btn-secondary btn-sm" href="${projectUrl(project)}">Обзор</a>${offerUrl(project) ? `<a class="btn btn-primary btn-project btn-sm" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
-  </article>`).join('')}</div>`;
+  </article>`).join('');
+const projectCards = (items) => `<div class="project-grid">${projectCardArticles(items)}</div>`;
 
 const textPanel = (id, title, paragraphs, list = []) => `<section class="card seo-panel" id="${id}"><h2>${escapeHtml(title)}</h2>${paragraphs.map((item) => `<p>${escapeHtml(item)}</p>`).join('')}${list.length ? `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}</section>`;
 const sidebar = (links = []) => `<div class="card seo-toc"><h2>На этой странице</h2>${links.map((link) => `<a href="#${link.id}">${escapeHtml(link.title)}</a>`).join('')}</div><div class="card seo-trust"><strong>Как мы работаем</strong><p>Сравниваем условия из базы проекта, отмечаем дату проверки и не скрываем, что предложения могут измениться.</p><a class="seo-card-link" href="/about/methodology/">Методика рейтинга →</a></div>`;
+
+/* ---------- Компоненты и шаблон обзора проекта ---------- */
 
 const REVIEW_ICONS = {
   document: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 12h6M10 16h6"/>',
@@ -252,7 +338,8 @@ const reviewPage = (project, related, schema) => {
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="${canonical}"><link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
   <meta property="og:type" content="article"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${canonical}">
-  <link rel="stylesheet" href="/css/styles.css">
+  <script>document.documentElement.classList.add('motion-ready');window.__affgoldMotionFallback=setTimeout(()=>document.documentElement.classList.remove('motion-ready'),3000)</script>
+  <link rel="stylesheet" href="/css/review-page.css">
   ${schemas.map((item) => `<script type="application/ld+json">${JSON.stringify(item).replaceAll('</script', '<\\/script')}</script>`).join('\n  ')}
 </head><body data-page="catalog" data-project-theme="${escapeHtml(project.id)}" class="review-page"><div class="site-shell"><div class="bg-glow one"></div><div class="bg-glow two"></div>
 ${nav('catalog')}
@@ -263,7 +350,7 @@ ${nav('catalog')}
       <article class="card review-hero-card reveal" id="overview">
         <div class="review-hero-card__copy">
           <div class="review-hero-card__brand">
-            <div class="review-hero-card__logo"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></div>
+            <div class="review-hero-card__logo"><img src="${escapeHtml(absoluteLogo(project))}" alt="${escapeHtml(project.name)}" width="126" height="32" decoding="async"></div>
             <div><span class="review-kicker">Редакционный обзор</span><h1>Обзор <span>${escapeHtml(project.name)}</span></h1><div class="review-hero-card__rating">${reviewStars(project.rating)}<strong>${project.rating.toFixed(1)}</strong><span>${escapeHtml(project.verdict)}</span></div></div>
           </div>
           <p class="review-hero-card__lead">${escapeHtml(project.description)}</p>
@@ -312,6 +399,8 @@ ${nav('catalog')}
   <section class="section review-related-section" id="related"><div class="container"><div class="section-header reveal"><div><h2>Похожие проекты</h2><p>Ещё несколько обзоров с тем же форматом данных.</p></div><a class="link-more" href="/catalog.html">Весь каталог →</a></div>${projectCards(related)}</div></section>
 </main>${footer()}${mobileDock('catalog')}</div><script src="/js/main.js"></script></body></html>`;
 };
+
+/* ---------- Редактируемый контент разделов ---------- */
 
 const hubs = [
   {
@@ -482,6 +571,8 @@ informationalPages.forEach((item) => {
   }));
 });
 
+/* ---------- Проектные страницы, главная, каталог и sitemap ---------- */
+
 projects.forEach((project) => {
   const route = projectUrl(project);
   const schema = {
@@ -511,20 +602,66 @@ const catalogSchema = {
     '@type': 'ListItem', position: index + 1, url: `${DOMAIN}${projectUrl(project)}`, name: project.name
   }))
 };
-const catalogSource = fs.readFileSync(catalogPath, 'utf8');
-fs.writeFileSync(catalogPath, catalogSource.replace(
+const catalogSource = fs.readFileSync(catalogPath, 'utf8').replace(
+  /(<link rel="canonical" href=")[^"]+("\s*>)/,
+  `$1${DOMAIN}/catalog.html$2`
+);
+const rankedProjects = [...projects].sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name, 'ru'));
+const catalogWithSchema = catalogSource.replace(
   /<script type="application\/ld\+json" data-catalog-schema>.*?<\/script>/s,
   `<script type="application/ld+json" data-catalog-schema>${JSON.stringify(catalogSchema).replaceAll('</script', '<\\/script')}</script>`
-));
+);
+const catalogWithCards = replaceManagedBlock(
+  catalogWithSchema,
+  'CATALOG_PROJECTS',
+  applyBasePath(projectCardArticles(rankedProjects))
+).replace(
+  /(<span id="catalog-count" aria-live="polite">).*?(<\/span>)/,
+  `$1Найдено проектов: ${projects.length}$2`
+);
+fs.writeFileSync(path.join(BUILD_ROOT, 'catalog.html'), catalogWithCards);
+
+const homePath = path.join(ROOT, 'index.html');
+const organizationSchema = { '@context': 'https://schema.org', '@type': 'Organization', name: 'AFFGOLD', url: `${DOMAIN}/` };
+const homeSource = fs.readFileSync(homePath, 'utf8')
+  .replace(/(<link rel="canonical" href=")[^"]+("\s*>)/, `$1${DOMAIN}/$2`)
+  .replace(
+    /<script type="application\/ld\+json" data-site-schema>.*?<\/script>/s,
+    `<script type="application/ld+json" data-site-schema>${JSON.stringify(organizationSchema).replaceAll('</script', '<\\/script')}</script>`
+  );
+const homeWithCards = replaceManagedBlock(
+  homeSource,
+  'HOME_PROJECTS',
+  applyBasePath(projectCardArticles(rankedProjects.slice(0, 4)))
+).replace(
+  /(<div class="num" data-project-count data-count=")\d+(" data-suffix="">)\d+(<\/div>)/,
+  `$1${projects.length}$2${projects.length}$3`
+);
+fs.writeFileSync(path.join(BUILD_ROOT, 'index.html'), homeWithCards);
+
+const legacyReviewSource = fs.readFileSync(path.join(ROOT, 'review.html'), 'utf8');
+const legacyReviewRoutes = Object.fromEntries(projects.map((project) => [project.id, project.slug || project.id]));
+const legacyReview = legacyReviewSource.replace(
+  /const routes = \{.*?\};/s,
+  `const routes = ${JSON.stringify(legacyReviewRoutes)};`
+);
+fs.writeFileSync(path.join(BUILD_ROOT, 'review.html'), legacyReview);
 
 const sitemapRoutes = ['/', '/catalog.html', ...writtenRoutes];
 const reviewUpdatedByRoute = new Map(projects.map((project) => [projectUrl(project), project.lastUpdated || UPDATED]));
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...new Set(sitemapRoutes)].map((route) => `  <url><loc>${xmlEscape(`${DOMAIN}${route}`)}</loc><lastmod>${reviewUpdatedByRoute.get(route) || UPDATED}</lastmod></url>`).join('\n')}\n</urlset>\n`;
-fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), sitemap);
+fs.writeFileSync(path.join(BUILD_ROOT, 'sitemap.xml'), sitemap);
+fs.writeFileSync(
+  path.join(BUILD_ROOT, 'robots.txt'),
+  `User-agent: *\nAllow: /\nClean-param: q&payout&types&sort /catalog.html\n\nSitemap: ${DOMAIN}/sitemap.xml\n`
+);
 
 const notFound = page({ route: '/404.html', active: '', eyebrow: 'Ошибка 404', h1: 'Страница не найдена', title: 'Страница не найдена — AFFGOLD', description: 'Запрошенная страница не найдена.', lead: 'Возможно, адрес изменился. Перейдите в каталог или выберите раздел сайта.', breadcrumbs: [{ name: '404', url: '/404.html' }], index: false,
   content: `<div class="seo-grid"><a class="card seo-card" href="/catalog.html"><span class="seo-card-icon">☷</span><h2>Каталог</h2><p>Все проекты и фильтры.</p><span class="seo-card-link">Открыть →</span></a><a class="card seo-card" href="/guides/"><span class="seo-card-icon">?</span><h2>Гайды</h2><p>Полезные инструкции.</p><span class="seo-card-link">Открыть →</span></a></div>`
 });
-fs.writeFileSync(path.join(ROOT, '404.html'), applyBasePath(notFound));
+fs.writeFileSync(path.join(BUILD_ROOT, '404.html'), applyBasePath(notFound));
+
+assertBuildComplete();
+publishGeneratedSite();
 
 console.log(`Generated ${writtenRoutes.length} SEO routes and sitemap.xml`);

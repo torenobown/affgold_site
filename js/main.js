@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const menuToggle = document.querySelector('[data-menu-toggle]');
   const nav = document.querySelector('.nav');
+  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   /**
    * Мобильный drawer.
@@ -14,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mobileMenuTrigger && nav) {
     const backdrop = document.createElement('div');
     const drawer = document.createElement('aside');
+    const siteShell = document.querySelector('.site-shell');
     const headerLogo = document.querySelector('.header .logo');
     const homeLink = mobileDock.querySelector('[data-page-link="home"]');
 
@@ -21,8 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
     backdrop.setAttribute('aria-hidden', 'true');
 
     drawer.className = 'mobile-side-menu';
+    drawer.setAttribute('role', 'dialog');
+    drawer.setAttribute('aria-modal', 'true');
     drawer.setAttribute('aria-hidden', 'true');
     drawer.setAttribute('aria-label', 'Мобильное меню');
+    drawer.inert = true;
 
     const drawerHead = document.createElement('div');
     drawerHead.className = 'mobile-side-menu__head';
@@ -69,16 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileMenuTrigger.setAttribute('aria-expanded', 'false');
 
     const setDrawerState = (open) => {
+      const wasOpen = drawer.classList.contains('is-open');
       backdrop.classList.toggle('is-open', open);
       drawer.classList.toggle('is-open', open);
       document.body.classList.toggle('mobile-menu-open', open);
       mobileMenuTrigger.setAttribute('aria-expanded', String(open));
       backdrop.setAttribute('aria-hidden', String(!open));
       drawer.setAttribute('aria-hidden', String(!open));
+      drawer.inert = !open;
+      if (siteShell) siteShell.inert = open;
 
       if (open) {
         requestAnimationFrame(() => closeButton.focus());
-      } else if (document.activeElement === closeButton) {
+      } else if (wasOpen) {
         mobileMenuTrigger.focus();
       }
     };
@@ -97,108 +105,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
         setDrawerState(false);
+        return;
       }
+      if (event.key !== 'Tab' || !drawer.classList.contains('is-open')) return;
+      const focusable = [...drawer.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
   }
-
-  /** Кастомные выпадающие списки с поддержкой клавиатуры. */
-  const customSelects = [...document.querySelectorAll('.select-wrap select')];
-
-  const closeCustomSelects = (except = null) => {
-    document.querySelectorAll('.custom-select.open').forEach((select) => {
-      if (select === except) return;
-      select.classList.remove('open');
-      select.closest('.catalog-toolbar')?.classList.remove('select-is-open');
-      select.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
-    });
-  };
-
-  customSelects.forEach((nativeSelect, selectIndex) => {
-    const customSelect = document.createElement('div');
-    const trigger = document.createElement('button');
-    const menu = document.createElement('div');
-    const listboxId = `custom-select-${selectIndex}`;
-
-    customSelect.className = 'custom-select';
-    trigger.className = 'custom-select-trigger';
-    trigger.type = 'button';
-    trigger.setAttribute('aria-haspopup', 'listbox');
-    trigger.setAttribute('aria-expanded', 'false');
-    trigger.setAttribute('aria-controls', listboxId);
-    menu.className = 'custom-select-menu';
-    menu.id = listboxId;
-    menu.setAttribute('role', 'listbox');
-
-    [...nativeSelect.options].forEach((option, optionIndex) => {
-      const item = document.createElement('button');
-      item.className = 'custom-select-option';
-      item.type = 'button';
-      item.dataset.value = option.value;
-      item.dataset.index = String(optionIndex);
-      item.textContent = option.textContent;
-      item.setAttribute('role', 'option');
-      menu.append(item);
-    });
-
-    nativeSelect.classList.add('custom-select-native');
-    nativeSelect.closest('.select-wrap')?.classList.add('custom-select-ready');
-    nativeSelect.after(customSelect);
-    customSelect.append(trigger, menu);
-
-    const items = [...menu.querySelectorAll('.custom-select-option')];
-    const sync = () => {
-      const selected = nativeSelect.options[nativeSelect.selectedIndex] || nativeSelect.options[0];
-      trigger.innerHTML = `<span></span><i aria-hidden="true"></i>`;
-      trigger.querySelector('span').textContent = selected?.textContent || '';
-      items.forEach((item) => {
-        const active = item.dataset.value === nativeSelect.value;
-        item.classList.toggle('selected', active);
-        item.setAttribute('aria-selected', String(active));
-      });
-    };
-
-    const choose = (item) => {
-      nativeSelect.value = item.dataset.value;
-      nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      sync();
-      closeCustomSelects();
-      trigger.focus();
-    };
-
-    trigger.addEventListener('click', () => {
-      const willOpen = !customSelect.classList.contains('open');
-      closeCustomSelects(customSelect);
-      customSelect.classList.toggle('open', willOpen);
-      customSelect.closest('.catalog-toolbar')?.classList.toggle('select-is-open', willOpen);
-      trigger.setAttribute('aria-expanded', String(willOpen));
-      if (willOpen) (menu.querySelector('.selected') || items[0])?.focus();
-    });
-
-    menu.addEventListener('click', (event) => {
-      const item = event.target.closest('.custom-select-option');
-      if (item) choose(item);
-    });
-
-    customSelect.addEventListener('keydown', (event) => {
-      if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' ', 'Escape'].includes(event.key)) return;
-      event.preventDefault();
-      if (event.key === 'Escape') { closeCustomSelects(); trigger.focus(); return; }
-      if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.custom-select-option')) {
-        choose(event.target); return;
-      }
-      if (!customSelect.classList.contains('open')) { trigger.click(); return; }
-      const current = Math.max(0, items.indexOf(document.activeElement));
-      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
-        : event.key === 'ArrowUp' ? Math.max(0, current - 1) : Math.min(items.length - 1, current + 1);
-      items[next]?.focus();
-    });
-
-    nativeSelect.addEventListener('change', sync);
-    nativeSelect._syncCustomSelect = sync;
-    sync();
-  });
-
-  window.syncCustomSelects = () => customSelects.forEach((select) => select._syncCustomSelect?.());
 
   menuToggle?.addEventListener('click', () => {
     const open = nav?.classList.toggle('open');
@@ -231,24 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       return;
     }
-    if (!event.target.closest('.custom-select')) closeCustomSelects();
     if (!nav?.classList.contains('open') || event.target.closest('.nav') || event.target.closest('[data-menu-toggle]')) return;
     nav.classList.remove('open');
     menuToggle?.setAttribute('aria-expanded', 'false');
-  });
-
-  document.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-tab-target]');
-    if (!button) return;
-
-    const shell = button.closest('.review-tabs-shell') || document;
-    const target = button.dataset.tabTarget;
-
-    shell.querySelectorAll('[data-tab-target]').forEach((item) => item.classList.remove('active'));
-    shell.querySelectorAll('[data-tab-panel]').forEach((panel) => panel.classList.remove('active'));
-
-    button.classList.add('active');
-    shell.querySelector(`[data-tab-panel="${target}"]`)?.classList.add('active');
   });
 
   const autoRevealSelectors = [
@@ -262,7 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'main .catalog-summary'
   ];
   document.querySelectorAll(autoRevealSelectors.join(','))
-    .forEach((element) => { if (!element.classList.contains('no-reveal')) element.classList.add('reveal'); });
+    .forEach((element) => {
+      if (element.classList.contains('no-reveal') || element.classList.contains('reveal')) return;
+      const bounds = element.getBoundingClientRect();
+      const isAlreadyVisible = bounds.bottom > 0 && bounds.top < window.innerHeight * 0.95;
+      element.classList.add('reveal');
+      if (isAlreadyVisible) element.classList.add('visible');
+    });
 
   ['.stats-grid', '.project-grid', '.seo-grid'].forEach((selector) => {
     document.querySelectorAll(selector).forEach((group) => {
@@ -273,7 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const revealElements = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window) {
+  if (reducedMotionQuery.matches) {
+    revealElements.forEach((element) => element.classList.add('visible'));
+    document.documentElement.classList.remove('motion-ready');
+  } else if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
@@ -285,7 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
     revealElements.forEach((element) => observer.observe(element));
   } else {
     revealElements.forEach((element) => element.classList.add('visible'));
+    document.documentElement.classList.remove('motion-ready');
   }
+  clearTimeout(window.__affgoldMotionFallback);
 
   const currentPage = document.body.dataset.page;
   document.querySelectorAll(`[data-page-link="${currentPage}"]`).forEach((link) => link.classList.add('active'));
@@ -293,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-count]').forEach((element) => {
     const target = Number(element.dataset.count) || 0;
     const suffix = element.dataset.suffix || '';
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (reducedMotionQuery.matches) {
       element.textContent = `${target}${suffix}`;
       return;
     }

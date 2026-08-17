@@ -10,11 +10,7 @@
   }
 
   .hero-wrap,
-  .review-grid,
-  .review-hero,
-  .newsletter,
   .page-layout,
-  .bonus-layout,
   .footer-grid {
     grid-template-columns: 1fr;
   }
@@ -78,23 +74,6 @@
     margin-top: 7px;
     font-size: 0.8rem;
     line-height: 1.3;
-  }
-
-  .bonus-item {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .methods-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .newsletter-form {
-    flex-direction: column;
-  }
-
-  .newsletter-form .field {
-    max-width: none;
   }
 
   .mobile-dock {
@@ -277,10 +256,6 @@
 
   .stat-card .num {
     font-size: 1.45rem;
-  }
-
-  .methods-grid {
-    grid-template-columns: 1fr 1fr;
   }
 
   .logo span:last-child {
