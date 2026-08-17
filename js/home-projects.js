@@ -11,12 +11,11 @@
   };
   container.innerHTML = projects.map((project) => {
     const url = safeUrl(project.url);
-    return `<article class="card project-card">
+    return `<article class="card project-card" aria-label="${escapeHtml(project.name)}">
       <div class="project-card__head">
         <a class="project-card__logo" href="reviews/${encodeURIComponent(project.slug || project.id)}/" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${escapeHtml(project.logo)}" alt="${escapeHtml(project.name)}"></a>
         <div class="project-card__rating"><span class="rating-chip">★ ${Number(project.rating).toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
       </div>
-      <h3 class="project-card__title"><a href="reviews/${encodeURIComponent(project.slug || project.id)}/">${escapeHtml(project.name)}</a></h3>
       <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
       <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${Number(project.wager)}</dd></div></dl>
       <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>

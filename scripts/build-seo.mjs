@@ -193,12 +193,11 @@ ${nav(active)}
 const cardGrid = (cards) => `<div class="seo-grid">${cards.map((card) => `<a class="card seo-card" href="${card.url}"><span class="seo-card-icon">${card.icon || '◆'}</span><h2>${escapeHtml(card.title)}</h2><p>${escapeHtml(card.text)}</p><span class="seo-card-link">Открыть →</span></a>`).join('')}</div>`;
 
 const projectCards = (items) => `<div class="project-grid">${items.map((project) => `
-  <article class="card project-card">
+  <article class="card project-card" aria-label="${escapeHtml(project.name)}">
     <div class="project-card__head">
       <a class="project-card__logo" href="${projectUrl(project)}" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></a>
       <div class="project-card__rating"><span class="rating-chip">★ ${project.rating.toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
     </div>
-    <h3 class="project-card__title"><a href="${projectUrl(project)}">${escapeHtml(project.name)}</a></h3>
     <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
     <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${project.wager}</dd></div></dl>
     <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>
