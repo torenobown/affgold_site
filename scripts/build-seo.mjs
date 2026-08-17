@@ -96,16 +96,53 @@ const nav = (active) => `
 
 const footer = () => `
   <footer class="footer" id="footer">
-    <div class="container"><div class="card card-pad">
-      <div class="footer-grid">
-        <div><div class="footer-title">AFFGOLD</div><p class="seo-footer-note">Каталог обзоров и справочных материалов. Условия могут измениться после даты проверки.</p></div>
-        <div><div class="footer-title">Каталог</div><div class="footer-links"><a href="/catalog.html">Все проекты</a><a href="/ratings/">Рейтинги</a><a href="/bonuses/">Бонусы</a></div></div>
-        <div><div class="footer-title">Материалы</div><div class="footer-links"><a href="/guides/">Гайды</a><a href="/payments/">Платежи</a></div></div>
-        <div><div class="footer-title">О проекте</div><div class="footer-links"><a href="/about/methodology/">Методика</a><a href="/about/affiliate-disclosure/">Партнёрское уведомление</a><a href="/about/responsible-play/">Ответственная игра 18+</a><a href="/contacts/">Контакты</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия использования</a></div></div>
-      </div>
-      <div class="foot-note"><span>© 2026 AFFGOLD</span><span>18+ Играйте ответственно</span></div>
-    </div></div>
-  </footer>`;
+        <div class="container">
+          <div class="card card-pad">
+            <div class="footer-grid">
+              <div>
+                <div class="footer-title">AFFGOLD</div>
+                <p class="seo-footer-note">
+                  Каталог обзоров и справочных материалов. Условия могут измениться после даты проверки.
+                </p>
+              </div>
+
+              <div>
+                <div class="footer-title">Каталог</div>
+                <div class="footer-links">
+                  <a href="/catalog.html">Все проекты</a>
+                  <a href="/ratings/">Рейтинги</a>
+                  <a href="/bonuses/">Бонусы</a>
+                </div>
+              </div>
+
+              <div>
+                <div class="footer-title">Материалы</div>
+                <div class="footer-links">
+                  <a href="/guides/">Гайды</a>
+                  <a href="/payments/">Платежи</a>
+                </div>
+              </div>
+
+              <div>
+                <div class="footer-title">О проекте</div>
+                <div class="footer-links">
+                  <a href="/about/methodology/">Методика</a>
+                  <a href="/about/affiliate-disclosure/">Партнёрское уведомление</a>
+                  <a href="/about/responsible-play/">Ответственная игра 18+</a>
+                  <a href="/contacts/">Контакты</a>
+                  <a href="/privacy/">Конфиденциальность</a>
+                  <a href="/terms/">Условия использования</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="foot-note">
+              <span>© 2026 AFFGOLD</span>
+              <span>18+ Играйте ответственно</span>
+            </div>
+          </div>
+        </div>
+      </footer>`;
 
 const mobileDock = (active) => `
   <div class="mobile-dock"><div class="mobile-dock-grid">
@@ -155,11 +192,17 @@ ${nav(active)}
 
 const cardGrid = (cards) => `<div class="seo-grid">${cards.map((card) => `<a class="card seo-card" href="${card.url}"><span class="seo-card-icon">${card.icon || '◆'}</span><h2>${escapeHtml(card.title)}</h2><p>${escapeHtml(card.text)}</p><span class="seo-card-link">Открыть →</span></a>`).join('')}</div>`;
 
-const projectList = (items) => `<div class="seo-project-list">${items.map((project) => `
-  <article class="card seo-project">
-    <a class="seo-project-logo" href="${projectUrl(project)}"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}" loading="lazy"></a>
-    <div><h3><a href="${projectUrl(project)}">${escapeHtml(project.name)}</a></h3><p>${escapeHtml(project.bonus)} · ${escapeHtml(project.payoutLabel)} · вейджер x${project.wager}</p><button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button></div>
-    <div class="seo-project-score"><strong>★ ${project.rating.toFixed(1)}</strong><span>${escapeHtml(project.verdict)}</span><div class="offer-actions"><a class="btn btn-secondary btn-sm" href="${projectUrl(project)}">Обзор</a>${offerUrl(project) ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div></div>
+const projectCards = (items) => `<div class="project-grid">${items.map((project) => `
+  <article class="card project-card">
+    <div class="project-card__head">
+      <a class="project-card__logo" href="${projectUrl(project)}" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></a>
+      <div class="project-card__rating"><span class="rating-chip">★ ${project.rating.toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
+    </div>
+    <h3 class="project-card__title"><a href="${projectUrl(project)}">${escapeHtml(project.name)}</a></h3>
+    <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
+    <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${project.wager}</dd></div></dl>
+    <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>
+    <div class="project-card__actions"><a class="btn btn-secondary btn-sm" href="${projectUrl(project)}">Обзор</a>${offerUrl(project) ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
   </article>`).join('')}</div>`;
 
 const textPanel = (id, title, paragraphs, list = []) => `<section class="card seo-panel" id="${id}"><h2>${escapeHtml(title)}</h2>${paragraphs.map((item) => `<p>${escapeHtml(item)}</p>`).join('')}${list.length ? `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}</section>`;
@@ -170,7 +213,7 @@ const hubs = [
     route: '/ratings/', active: 'ratings', eyebrow: 'Подборки', h1: 'Рейтинги онлайн-проектов',
     title: 'Рейтинги онлайн-проектов 2026 — AFFGOLD',
     description: 'Рейтинги онлайн-проектов по скорости выплат, вейджеру, мобильной версии и другим понятным критериям.',
-    lead: 'Выбирайте подборку по важному для вас критерию. Внутри — прозрачная таблица, дата проверки и ссылки на подробные обзоры.',
+    lead: 'Выбирайте подборку по важному для вас критерию. Внутри — наглядные карточки, дата проверки и ссылки на подробные обзоры.',
     cards: [
       { title: 'Быстрые выплаты', text: 'Проекты со сроком обработки моментально или до одного часа.', url: '/ratings/fast-payouts/', icon: '↗' },
       { title: 'Низкий вейджер', text: 'Сортировка предложений от меньшего требования к отыгрышу.', url: '/ratings/low-wager/', icon: '×' },
@@ -254,7 +297,7 @@ const collectionPages = [
 
 collectionPages.forEach((item) => writeRoute(item.route, page({
   ...item, breadcrumbs: [item.parent || { name: item.active === 'bonuses' ? 'Бонусы' : item.active === 'ratings' ? 'Рейтинги' : 'Гайды', url: item.active === 'bonuses' ? '/bonuses/' : item.active === 'ratings' ? '/ratings/' : '/guides/' }, { name: item.h1, url: item.route }],
-  content: `${textPanel('about', 'Как составлена подборка', item.intro)}${projectList(item.items)}${textPanel('checklist', 'Что проверить самостоятельно', ['Откройте правила выбранного проекта непосредственно перед действием: условия и доступность методов меняются.'], item.list)}`,
+  content: `${textPanel('about', 'Как составлена подборка', item.intro)}${projectCards(item.items)}${textPanel('checklist', 'Что проверить самостоятельно', ['Откройте правила выбранного проекта непосредственно перед действием: условия и доступность методов меняются.'], item.list)}`,
   sidebar: sidebar([{ id: 'about', title: 'О подборке' }, { id: 'checklist', title: 'Чек-лист' }]),
   schema: { '@context': 'https://schema.org', '@type': 'ItemList', name: item.h1, numberOfItems: item.items.length, itemListElement: item.items.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${DOMAIN}${projectUrl(p)}`, name: p.name })) }
 })));
@@ -352,7 +395,7 @@ projects.forEach((project) => {
   ${textPanel('features', 'Что отмечено в обзоре', ['При подготовке карточки редакция фиксирует основные пользовательские параметры.'], project.features)}
   ${textPanel('bonus', 'Бонусные условия', [project.tabs.bonuses, 'Особое внимание уделите базе расчёта вейджера, максимальной ставке, сроку отыгрыша и списку игр, которые не участвуют в выполнении условий.'])}
   ${textPanel('payments', 'Пополнение и вывод', [project.tabs.payments, `В базе указаны методы: ${project.payments.join(', ')}. Фактическая доступность зависит от региона, валюты и статуса аккаунта.`])}
-  <section class="card seo-panel" id="related"><h2>Похожие материалы</h2><div class="seo-link-cloud">${related.map((item) => `<a href="${projectUrl(item)}">${escapeHtml(item.name)}</a>`).join('')}<a href="/bonuses/">Все бонусы</a><a href="/ratings/">Рейтинги</a></div></section>
+  <section class="seo-related-projects" id="related"><h2>Похожие проекты</h2>${projectCards(related)}<div class="seo-link-cloud"><a href="/bonuses/">Все бонусы</a><a href="/ratings/">Рейтинги</a></div></section>
   <div class="seo-notice"><strong>Редакционная отметка:</strong> оценка помогает сравнивать проекты, но не гарантирует выплату или результат. Условия могут измениться после даты проверки.</div>`;
   writeRoute(route, page({ route, active: 'catalog', eyebrow: 'Подробный обзор', h1: `Обзор ${project.name}`, title: `${project.name}: обзор, бонус ${project.bonus} и условия — AFFGOLD`, description: `${project.name}: обзор бонуса ${project.bonus}, вейджер x${project.wager}, платежные методы и важные условия.`, lead: project.description,
     breadcrumbs: [{ name: 'Каталог', url: '/catalog.html' }, { name: project.name, url: route }], content,

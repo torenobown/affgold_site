@@ -160,9 +160,8 @@
 .section-header p { margin: 10px 0 0; color: var(--text-secondary); }
 .link-more { color: #d8ccff; font-weight: 700; }
 
-.stats-grid, .cards-grid, .bonus-grid, .review-grid, .footer-grid { display: grid; gap: 18px; }
+.stats-grid, .bonus-grid, .review-grid, .footer-grid { display: grid; gap: 18px; }
 .stats-grid { grid-template-columns: repeat(4, 1fr); }
-.cards-grid { grid-template-columns: repeat(4, 1fr); }
 .review-grid { grid-template-columns: 1.35fr 0.65fr; align-items: start; }
 .footer-grid { grid-template-columns: 1.1fr 0.8fr 0.8fr 1fr; }
 
@@ -188,42 +187,6 @@
   color: var(--text-secondary);
 }
 
-.project-card {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform .28s cubic-bezier(.2,.75,.3,1),
-    border-color .28s ease,
-    box-shadow .28s ease;
-  will-change: transform;
-}
-.project-card.reveal {
-  transition:
-    opacity .55s ease var(--reveal-delay, 0ms),
-    translate .55s cubic-bezier(.2,.75,.3,1) var(--reveal-delay, 0ms),
-    transform .28s cubic-bezier(.2,.75,.3,1),
-    border-color .28s ease,
-    box-shadow .28s ease;
-}
-.project-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(145deg, rgba(123,60,255,.08), transparent 38%);
-  pointer-events: none;
-}
-.project-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(178,77,255,.24);
-  box-shadow: 0 24px 64px rgba(0,0,0,.4), 0 12px 30px rgba(123,60,255,.1);
-}
-.project-card .top-row {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
-}
 .logo-pill {
   display: inline-flex;
   align-items: center;
@@ -241,17 +204,6 @@
 .logo-pill.blue { color: #7fb5ff; }
 .logo-pill.cyan { color: #6de1ff; }
 .logo-pill.yellow { color: #ffda77; }
-.project-bonus {
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-.project-sub { color: var(--text-secondary); font-size: 0.95rem; }
-.rating-chip {
-  display: inline-flex; gap: 6px; align-items: center;
-  color: #ffd469; font-weight: 700; font-size: 0.95rem;
-}
-.card-actions { display: flex; gap: 12px; flex-wrap: wrap; }
-
 .page-hero {
   padding: 34px 0 16px;
 }

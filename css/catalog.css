@@ -1,6 +1,6 @@
 .page-layout {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 292px minmax(0, 1fr);
   gap: 22px;
   align-items: start;
 }
@@ -168,33 +168,6 @@ select option { background: #111629; color: var(--text); }
 .check-row { padding: 5px 0; transition: color .2s ease; }
 .check-row:hover { color: var(--text); }
 
-.table-wrap {
-  overflow: hidden;
-}
-.table-head, .table-row {
-  display: grid;
-  grid-template-columns: 1.05fr .9fr 1.05fr .55fr .6fr 1.25fr;
-  gap: 16px;
-  align-items: center;
-  padding: 16px 18px;
-}
-.table-head {
-  color: #8d95b3;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-.table-row { transition: background-color .2s ease; }
-.table-row + .table-row { border-top: 1px solid rgba(255,255,255,0.06); }
-.table-row:hover { background: rgba(255,255,255,0.02); }
-.pager {
-  display: flex; gap: 8px; justify-content: center; padding: 20px 18px 10px;
-}
-.pager button {
-  min-width: 38px; height: 38px; border-radius: 12px; border: none;
-  background: rgba(255,255,255,0.05); color: var(--text-secondary); cursor: pointer;
-}
-.pager .active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; }
-
-
 /* ==============================
    CATALOG: interactive filters
    ============================== */
@@ -233,7 +206,7 @@ select option { background: #111629; color: var(--text); }
   color: var(--text-secondary);
   font-size: .92rem;
 }
-.table-wrap { position: relative; z-index: 1; }
+#catalog-projects { position: relative; z-index: 1; }
 .catalog-empty {
   padding: 44px 20px;
   text-align: center;
@@ -242,30 +215,17 @@ select option { background: #111629; color: var(--text); }
 .filter-card .filter-actions { display: grid; gap: 10px; }
 .filter-card .filter-actions .btn { width: 100%; }
 .filter-card label { cursor: pointer; }
-.table-row[hidden] { display: none; }
-.catalog-logo {
-  width: 118px;
-  height: 42px;
-  display: grid;
-  place-items: center start;
-}
-.catalog-logo img {
-  width: 96px;
-  height: 32px;
-  object-fit: contain;
-  object-position: left center;
-}
-.catalog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 860px) {
   .catalog-toolbar { align-items: stretch; flex-direction: column; }
   .catalog-sort { width: 100%; }
   .catalog-summary { flex-direction: column; }
-  .catalog-logo { width: 100%; justify-items: end; }
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1280px) {
+  .page-layout { grid-template-columns: 1fr; }
   .filter-open { display: inline-flex; white-space: nowrap; }
   .sidebar-sticky { position: fixed; inset: 0 auto 0 0; z-index: 81; width: min(390px, 90vw); padding: 12px; overflow-y: auto; transform: translateX(-105%); transition: transform .25s ease; }
+  .sidebar-sticky.reveal { opacity: 1; translate: 0; }
   .sidebar-sticky.open { transform: translateX(0); }
   .filter-card { min-height: 100%; background: #0d1120; }
   .filter-close { display: block; }

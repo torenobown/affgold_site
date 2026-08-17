@@ -1,7 +1,7 @@
 /** Рабочая фильтрация и динамическая отрисовка каталога. */
 (() => {
   const projects = window.AFFGOLD_PROJECTS || [];
-  const rowsContainer = document.querySelector('#catalog-rows');
+  const projectsContainer = document.querySelector('#catalog-projects');
   const emptyState = document.querySelector('#catalog-empty');
   const countElement = document.querySelector('#catalog-count');
   const searchInput = document.querySelector('#catalog-search');
@@ -15,7 +15,7 @@
   const filterCloseButtons = document.querySelectorAll('[data-filter-close]');
   const filterBackdrop = document.querySelector('.filter-backdrop');
 
-  if (!rowsContainer) return;
+  if (!projectsContainer) return;
 
   const escapeHtml = (value = '') => String(value)
     .replaceAll('&', '&amp;')
@@ -31,16 +31,19 @@
     } catch { return ''; }
   };
 
-  const renderRow = (project) => {
+  const renderCard = (project) => {
     const offerUrl = safeUrl(project.url);
     return `
-    <article class="table-row">
-      <div class="catalog-logo"><img src="${escapeHtml(project.logo)}" alt="${escapeHtml(project.name)}" /></div>
-      <div>${escapeHtml(project.bonus)}</div>
-      <div><button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button></div>
-      <div>x${project.wager}</div>
-      <div><span class="rating-chip">★ ${Number(project.rating).toFixed(1)}</span></div>
-      <div class="catalog-actions"><a class="btn btn-secondary btn-sm" href="reviews/${encodeURIComponent(project.slug || project.id)}/">Обзор</a>${offerUrl ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(offerUrl)}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
+    <article class="card project-card">
+      <div class="project-card__head">
+        <a class="project-card__logo" href="reviews/${encodeURIComponent(project.slug || project.id)}/" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${escapeHtml(project.logo)}" alt="${escapeHtml(project.name)}" /></a>
+        <div class="project-card__rating"><span class="rating-chip">★ ${Number(project.rating).toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
+      </div>
+      <h3 class="project-card__title"><a href="reviews/${encodeURIComponent(project.slug || project.id)}/">${escapeHtml(project.name)}</a></h3>
+      <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
+      <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${Number(project.wager)}</dd></div></dl>
+      <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>
+      <div class="project-card__actions"><a class="btn btn-secondary btn-sm" href="reviews/${encodeURIComponent(project.slug || project.id)}/">Обзор</a>${offerUrl ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(offerUrl)}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
     </article>`;
   };
 
@@ -68,7 +71,7 @@
       return b.rating - a.rating;
     });
 
-    rowsContainer.innerHTML = result.map(renderRow).join('');
+    projectsContainer.innerHTML = result.map(renderCard).join('');
     countElement.textContent = `Найдено проектов: ${result.length}`;
     emptyState.hidden = result.length !== 0;
 

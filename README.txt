@@ -73,7 +73,7 @@ JAVASCRIPT
 - css/base.css — переменные, базовые элементы, шапка
 - css/components.css — общие компоненты, футер и анимации
 - css/home.css — главная страница и карточки
-- css/catalog.css — каталог, таблица и фильтры
+- css/catalog.css — каталог и фильтры
 - css/review.css — страница обзора
 - css/seo.css — статьи, рейтинги, подборки и страницы доверия
 - css/responsive.css — общая адаптивность

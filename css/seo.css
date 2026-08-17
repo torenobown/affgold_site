@@ -17,7 +17,7 @@
 .seo-lead { margin: 0; max-width: 760px; color: var(--text-secondary); font-size: 1.08rem; line-height: 1.75; }
 .seo-meta { display: flex; flex-wrap: wrap; gap: 9px 18px; margin-top: 20px; color: #8f97b5; font-size: .9rem; }
 .seo-meta span { display: inline-flex; align-items: center; gap: 7px; }
-.seo-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+.seo-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 24px; align-items: start; }
 .seo-main { display: grid; gap: 20px; }
 .seo-sidebar { position: sticky; top: calc(var(--header-h) + 18px); display: grid; gap: 16px; }
 .seo-panel { padding: clamp(20px, 3vw, 32px); }
@@ -53,32 +53,6 @@
 .seo-card h2, .seo-card h3 { margin: 2px 0 0; font-size: 1.08rem; }
 .seo-card p { margin: 0; color: var(--text-secondary); line-height: 1.55; font-size: .92rem; }
 .seo-card-link { margin-top: auto; color: #d9ceff; font-size: .9rem; font-weight: 800; }
-.seo-project-list { display: grid; gap: 12px; }
-.seo-project {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  padding: 17px;
-  transition: transform .24s cubic-bezier(.2,.75,.3,1), border-color .24s ease, box-shadow .24s ease;
-}
-.seo-project.reveal {
-  transition:
-    opacity .55s ease var(--reveal-delay, 0ms),
-    translate .55s cubic-bezier(.2,.75,.3,1) var(--reveal-delay, 0ms),
-    transform .24s cubic-bezier(.2,.75,.3,1),
-    border-color .24s ease,
-    box-shadow .24s ease;
-}
-.seo-project:hover { transform: translateY(-3px); border-color: rgba(178,77,255,.2); box-shadow: 0 22px 56px rgba(0,0,0,.38); }
-.seo-project-logo { width: 100px; height: 44px; display: grid; place-items: center start; }
-.seo-project-logo img { width: 92px; height: 38px; object-fit: contain; object-position: left center; }
-.seo-project h3 { margin: 0 0 5px; }
-.seo-project p { margin: 0; color: var(--text-secondary); font-size: .9rem; }
-.seo-project .promo-code { margin-top: 10px; }
-.seo-project-score { text-align: right; }
-.seo-project-score strong { display: block; color: #ffd469; font-size: 1.1rem; }
-.seo-project-score span { display: block; margin: 5px 0 10px; color: var(--text-secondary); font-size: .82rem; }
 .seo-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .seo-fact { padding: 17px; border: 1px solid rgba(255,255,255,.07); border-radius: 16px; background: rgba(255,255,255,.025); }
 .seo-fact span { display: block; color: var(--text-secondary); font-size: .82rem; }
@@ -104,6 +78,8 @@
 .seo-link-cloud { display: flex; flex-wrap: wrap; gap: 9px; }
 .seo-link-cloud a { padding: 9px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: #c9cde0; font-size: .88rem; transition: color .2s ease, border-color .2s ease, background .2s ease; }
 .seo-link-cloud a:hover { border-color: rgba(123,60,255,.32); color: #fff; }
+.seo-related-projects { display: grid; gap: 18px; }
+.seo-related-projects > h2 { margin: 0; font-size: clamp(1.35rem, 2.4vw, 2rem); }
 .seo-review-top { padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; }
 .seo-review-brand { display: flex; gap: 18px; align-items: center; }
 .seo-review-logo { width: 150px; height: 86px; padding: 15px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.07); border-radius: 18px; background: rgba(255,255,255,.025); }
@@ -118,19 +94,16 @@
 .seo-checks li::before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 900; }
 .seo-footer-note { max-width: 520px; line-height: 1.65; }
 
-@media (max-width: 1040px) {
+@media (max-width: 1280px) {
   .seo-layout { grid-template-columns: 1fr; }
   .seo-sidebar { position: static; grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 1040px) {
   .seo-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 @media (max-width: 720px) {
   .seo-hero { padding-top: 30px; }
   .seo-grid, .seo-sidebar, .seo-facts { grid-template-columns: 1fr; }
-  .seo-project { grid-template-columns: 82px minmax(0,1fr); }
-  .seo-project-logo { width: 74px; }
-  .seo-project-logo img { width: 72px; }
-  .seo-project-score { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; text-align: left; }
-  .seo-project-score span { margin: 0; }
   .seo-review-top { grid-template-columns: 1fr; }
   .seo-review-brand { align-items: flex-start; flex-direction: column; }
   .seo-review-bonus { min-width: 0; text-align: left; }

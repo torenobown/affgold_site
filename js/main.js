@@ -254,20 +254,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoRevealSelectors = [
     'main .section-header',
     'main .seo-grid > *',
-    'main .cards-grid > *',
+    'main .project-grid > *',
     'main .stats-grid > *',
-    'main .seo-project-list > *',
     'main .seo-main > .card',
     'main .seo-main > .seo-notice',
     'main .seo-facts > *',
-    'main .table-wrap',
     'main .catalog-toolbar',
     'main .catalog-summary'
   ];
   document.querySelectorAll(autoRevealSelectors.join(','))
     .forEach((element) => { if (!element.classList.contains('no-reveal')) element.classList.add('reveal'); });
 
-  ['.stats-grid', '.cards-grid', '.seo-grid', '.seo-project-list', '.seo-facts'].forEach((selector) => {
+  ['.stats-grid', '.project-grid', '.seo-grid', '.seo-facts'].forEach((selector) => {
     document.querySelectorAll(selector).forEach((group) => {
       [...group.children].filter((item) => item.classList.contains('reveal')).forEach((item, index) => {
         item.style.setProperty('--reveal-delay', `${Math.min(index * 55, 165)}ms`);
