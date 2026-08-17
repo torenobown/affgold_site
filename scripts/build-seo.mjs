@@ -193,7 +193,7 @@ ${nav(active)}
 const cardGrid = (cards) => `<div class="seo-grid">${cards.map((card) => `<a class="card seo-card" href="${card.url}"><span class="seo-card-icon">${card.icon || '◆'}</span><h2>${escapeHtml(card.title)}</h2><p>${escapeHtml(card.text)}</p><span class="seo-card-link">Открыть →</span></a>`).join('')}</div>`;
 
 const projectCards = (items) => `<div class="project-grid">${items.map((project) => `
-  <article class="card project-card" aria-label="${escapeHtml(project.name)}">
+  <article class="card project-card" data-project-theme="${escapeHtml(project.id)}" aria-label="${escapeHtml(project.name)}">
     <div class="project-card__head">
       <a class="project-card__logo" href="${projectUrl(project)}" aria-label="Обзор ${escapeHtml(project.name)}"><img src="${absoluteLogo(project)}" alt="${escapeHtml(project.name)}"></a>
       <div class="project-card__rating"><span class="rating-chip">★ ${project.rating.toFixed(1)}</span><span>${escapeHtml(project.verdict)}</span></div>
@@ -201,7 +201,7 @@ const projectCards = (items) => `<div class="project-grid">${items.map((project)
     <div><span class="project-card__label">Бонус</span><div class="project-card__bonus">${escapeHtml(project.bonus)}</div><p class="project-card__sub">${escapeHtml(project.bonusSubtitle)}</p></div>
     <dl class="project-card__facts"><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Вейджер</dt><dd>x${project.wager}</dd></div></dl>
     <button class="promo-code promo-code-sm" type="button" data-copy-code="${escapeHtml(project.promoCode || 'BETGOLDTEAM')}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</strong></button>
-    <div class="project-card__actions"><a class="btn btn-secondary btn-sm" href="${projectUrl(project)}">Обзор</a>${offerUrl(project) ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
+    <div class="project-card__actions"><a class="btn btn-secondary btn-sm" href="${projectUrl(project)}">Обзор</a>${offerUrl(project) ? `<a class="btn btn-primary btn-project btn-sm" href="${escapeHtml(offerUrl(project))}" target="_blank" rel="sponsored nofollow noopener">На сайт</a>` : ''}</div>
   </article>`).join('')}</div>`;
 
 const textPanel = (id, title, paragraphs, list = []) => `<section class="card seo-panel" id="${id}"><h2>${escapeHtml(title)}</h2>${paragraphs.map((item) => `<p>${escapeHtml(item)}</p>`).join('')}${list.length ? `<ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}</section>`;
@@ -219,10 +219,6 @@ const REVIEW_ICONS = {
 };
 
 const reviewIcon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${REVIEW_ICONS[name] || REVIEW_ICONS.spark}</svg>`;
-const reviewDate = (value = UPDATED) => {
-  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return match ? `${match[3]}.${match[2]}.${match[1]}` : String(value);
-};
 const reviewScore = (value) => Math.max(0, Math.min(5, Number(value) || 0));
 const reviewStars = (value) => {
   const score = reviewScore(value);
@@ -241,7 +237,6 @@ const reviewScoreRows = (scores = {}) => [
 
 const reviewPage = (project, related, schema) => {
   const route = projectUrl(project);
-  const updated = project.lastUpdated || UPDATED;
   const canonical = `${DOMAIN}${route}`;
   const title = cleanSeoText(`${project.name}: обзор, бонус ${project.bonus} и условия — AFFGOLD`);
   const description = cleanSeoText(`${project.name}: обзор бонуса ${project.bonus}, вейджер x${project.wager}, платежные методы и важные условия.`);
@@ -259,7 +254,7 @@ const reviewPage = (project, related, schema) => {
   <meta property="og:type" content="article"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${canonical}">
   <link rel="stylesheet" href="/css/styles.css">
   ${schemas.map((item) => `<script type="application/ld+json">${JSON.stringify(item).replaceAll('</script', '<\\/script')}</script>`).join('\n  ')}
-</head><body data-page="catalog" class="review-page"><div class="site-shell"><div class="bg-glow one"></div><div class="bg-glow two"></div>
+</head><body data-page="catalog" data-project-theme="${escapeHtml(project.id)}" class="review-page"><div class="site-shell"><div class="bg-glow one"></div><div class="bg-glow two"></div>
 ${nav('catalog')}
 <main class="review-main">
   <section class="review-intro"><div class="container">
@@ -274,9 +269,8 @@ ${nav('catalog')}
           <p class="review-hero-card__lead">${escapeHtml(project.description)}</p>
           <p class="review-hero-card__summary">Стартовое предложение — ${escapeHtml(project.bonus)}, требование к отыгрышу — x${project.wager}. Перед активацией проверьте актуальные правила и доступность в своём регионе.</p>
           <div class="review-tags">${project.tags.map((tag) => `<span class="review-tag">${escapeHtml(tag)}</span>`).join('')}</div>
-          <dl class="review-hero-facts"><div><dt>Бонус</dt><dd>${escapeHtml(project.bonus)}</dd></div><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div><div><dt>Проверено</dt><dd><time datetime="${escapeHtml(updated)}">${reviewDate(updated)}</time></dd></div></dl>
+          <dl class="review-hero-facts"><div><dt>Бонус</dt><dd>${escapeHtml(project.bonus)}</dd></div><div><dt>Вывод</dt><dd>${escapeHtml(project.payoutLabel)}</dd></div></dl>
         </div>
-        <div class="review-hero-card__art" aria-hidden="true"><img src="/assets/images/hero-casino.svg" alt=""></div>
       </article>
 
       <aside class="card review-score-card reveal" id="rating" aria-labelledby="review-score-title">
@@ -287,8 +281,7 @@ ${nav('catalog')}
       </aside>
 
       <aside class="card review-cta-card reveal" aria-labelledby="review-cta-title">
-        <img class="review-cta-card__art" src="/assets/images/bonus-orb.svg" alt="" aria-hidden="true">
-        <div class="review-cta-card__content"><span class="review-kicker">Предложение проекта</span><h2 id="review-cta-title">Готовы перейти?</h2><p>Сначала сверьте правила и региональную доступность на стороне проекта.</p><strong class="review-cta-card__bonus">${escapeHtml(project.bonus)}</strong><button class="promo-code" type="button" data-copy-code="${escapeHtml(promoCode)}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(promoCode)}</strong></button>${externalUrl ? `<a class="btn btn-primary" href="${escapeHtml(externalUrl)}" target="_blank" rel="sponsored nofollow noopener">Открыть предложение</a>` : ''}<small>18+. Условия и доступность могут меняться.</small></div>
+        <div class="review-cta-card__content"><span class="review-kicker">Предложение проекта</span><h2 id="review-cta-title">Готовы перейти?</h2><p>Сначала сверьте правила и региональную доступность на стороне проекта.</p><strong class="review-cta-card__bonus">${escapeHtml(project.bonus)}</strong><button class="promo-code" type="button" data-copy-code="${escapeHtml(promoCode)}" title="Скопировать промокод"><span>Промокод</span><strong>${escapeHtml(promoCode)}</strong></button>${externalUrl ? `<a class="btn btn-primary btn-project" href="${escapeHtml(externalUrl)}" target="_blank" rel="sponsored nofollow noopener">Открыть предложение</a>` : ''}<small>18+. Условия и доступность могут меняться.</small></div>
       </aside>
 
       <section class="review-highlight-grid" aria-label="Главное об условиях">
