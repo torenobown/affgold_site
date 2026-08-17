@@ -3,6 +3,104 @@ document.addEventListener('DOMContentLoaded', () => {
   const menuToggle = document.querySelector('[data-menu-toggle]');
   const nav = document.querySelector('.nav');
 
+  /**
+   * Мобильный drawer.
+   * Разметка создаётся из уже существующей навигации, поэтому относительные
+   * ссылки остаются корректными на страницах любой вложенности.
+   */
+  const mobileDock = document.querySelector('.mobile-dock');
+  const mobileMenuTrigger = mobileDock?.querySelector('a[href="#footer"]');
+
+  if (mobileMenuTrigger && nav) {
+    const backdrop = document.createElement('div');
+    const drawer = document.createElement('aside');
+    const headerLogo = document.querySelector('.header .logo');
+    const homeLink = mobileDock.querySelector('[data-page-link="home"]');
+
+    backdrop.className = 'mobile-menu-backdrop';
+    backdrop.setAttribute('aria-hidden', 'true');
+
+    drawer.className = 'mobile-side-menu';
+    drawer.setAttribute('aria-hidden', 'true');
+    drawer.setAttribute('aria-label', 'Мобильное меню');
+
+    const drawerHead = document.createElement('div');
+    drawerHead.className = 'mobile-side-menu__head';
+
+    const brand = document.createElement('div');
+    brand.className = 'mobile-side-menu__brand';
+    if (headerLogo) {
+      const badge = headerLogo.querySelector('.logo-badge')?.cloneNode(true);
+      if (badge) brand.append(badge);
+    }
+    brand.append(document.createTextNode('AFFGOLD'));
+
+    const closeButton = document.createElement('button');
+    closeButton.className = 'mobile-side-menu__close';
+    closeButton.type = 'button';
+    closeButton.setAttribute('aria-label', 'Закрыть меню');
+    closeButton.textContent = '×';
+
+    drawerHead.append(brand, closeButton);
+
+    const drawerNav = document.createElement('nav');
+    drawerNav.className = 'mobile-side-menu__nav';
+
+    if (homeLink) {
+      const clonedHome = homeLink.cloneNode(true);
+      clonedHome.innerHTML = '<span>Главная</span>';
+      drawerNav.append(clonedHome);
+    }
+
+    nav.querySelectorAll('a').forEach((link) => {
+      const clonedLink = link.cloneNode(true);
+      drawerNav.append(clonedLink);
+    });
+
+    const note = document.createElement('div');
+    note.className = 'mobile-side-menu__note';
+    note.textContent = '18+. Перед переходом проверяйте актуальные условия выбранного проекта.';
+
+    drawer.append(drawerHead, drawerNav, note);
+    document.body.append(backdrop, drawer);
+
+    mobileMenuTrigger.setAttribute('role', 'button');
+    mobileMenuTrigger.setAttribute('aria-haspopup', 'dialog');
+    mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+
+    const setDrawerState = (open) => {
+      backdrop.classList.toggle('is-open', open);
+      drawer.classList.toggle('is-open', open);
+      document.body.classList.toggle('mobile-menu-open', open);
+      mobileMenuTrigger.setAttribute('aria-expanded', String(open));
+      backdrop.setAttribute('aria-hidden', String(!open));
+      drawer.setAttribute('aria-hidden', String(!open));
+
+      if (open) {
+        requestAnimationFrame(() => closeButton.focus());
+      } else if (document.activeElement === closeButton) {
+        mobileMenuTrigger.focus();
+      }
+    };
+
+    mobileMenuTrigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      setDrawerState(!drawer.classList.contains('is-open'));
+    });
+
+    closeButton.addEventListener('click', () => setDrawerState(false));
+    backdrop.addEventListener('click', () => setDrawerState(false));
+    drawerNav.addEventListener('click', (event) => {
+      if (event.target.closest('a')) setDrawerState(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
+        setDrawerState(false);
+      }
+    });
+  }
+
   /** Кастомные выпадающие списки с поддержкой клавиатуры. */
   const customSelects = [...document.querySelectorAll('.select-wrap select')];
 

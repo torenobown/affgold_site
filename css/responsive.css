@@ -1,3 +1,9 @@
+/* Динамическое мобильное меню скрыто на desktop. */
+.mobile-menu-backdrop,
+.mobile-side-menu {
+  display: none;
+}
+
 @media (max-width: 1120px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -24,59 +30,68 @@
 
 @media (max-width: 860px) {
   :root {
-    --header-h: 72px;
+    --header-h: 0px;
   }
 
   .container {
     width: min(var(--container), calc(100% - 20px));
   }
 
-  .menu-toggle {
-    display: inline-grid;
-  }
-
-  .nav {
-    position: fixed;
-    top: calc(var(--header-h) + 8px);
-    left: 10px;
-    right: 10px;
-    padding: 12px;
-
-    display: none;
-    flex-direction: column;
-    align-items: stretch;
-
-    background: rgba(12, 15, 27, 0.97);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 22px;
-    box-shadow: var(--shadow);
-  }
-
-  .nav.open {
-    display: flex;
-  }
-
-  .nav a {
-    width: 100%;
-  }
-
-  .header-actions .icon-btn:not(.menu-toggle) {
+  /* На телефоне верхняя шапка не нужна: навигация живёт в нижнем dock + drawer. */
+  .header {
     display: none;
   }
 
-  .header-actions .btn {
-    display: none;
+  main {
+    padding-top: 0;
   }
 
   .hero {
-    padding-top: 26px;
+    padding: 20px 0 24px;
+  }
+
+  .page-hero {
+    padding-top: 24px;
+  }
+
+  .hero-wrap {
+    gap: 24px;
+  }
+
+  .hero-panel {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  /* Статистика на мобильном всегда 2 x 2. */
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat-card {
+    min-width: 0;
+    padding: 16px 10px;
+    border-radius: 18px;
+  }
+
+  .stat-card .num {
+    font-size: 1.55rem;
+    line-height: 1.05;
+  }
+
+  .stat-card .label {
+    margin-top: 7px;
+    font-size: 0.8rem;
+    line-height: 1.3;
   }
 
   .table-head {
     display: none;
   }
 
-  /* Общий контейнер таблицы визуально убираем */
+  /* Каталог: общий контейнер визуально убран, каждый проект — отдельная карточка. */
   .table-wrap {
     padding: 0;
     background: transparent;
@@ -86,42 +101,34 @@
     overflow: visible;
   }
 
-  /* Каждый проект — отдельная карточка */
   .table-row {
     position: relative;
     grid-template-columns: 1fr;
     gap: 10px;
     align-items: start;
-
     padding: 16px;
     margin-bottom: 16px;
-
     border: 0;
     border-radius: 22px;
     background: rgba(10, 14, 30, 0.94);
-
     box-shadow:
       inset 0 0 22px rgba(90, 150, 255, 0.18),
       inset 0 0 10px rgba(168, 82, 255, 0.20),
       inset 0 0 4px rgba(255, 104, 221, 0.16),
       0 0 12px rgba(114, 91, 255, 0.18),
       0 10px 28px rgba(0, 0, 0, 0.20);
-
     isolation: isolate;
     overflow: hidden;
   }
 
-  /* Градиентная неоновая рамка */
   .table-row::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: 2;
-
     padding: 1px;
     border-radius: inherit;
     pointer-events: none;
-
     background: linear-gradient(
       135deg,
       rgba(92, 188, 255, 0.95) 0%,
@@ -129,22 +136,15 @@
       rgba(188, 74, 255, 0.92) 72%,
       rgba(255, 104, 221, 0.88) 100%
     );
-
     -webkit-mask:
       linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-
     -webkit-mask-composite: xor;
-
     mask:
       linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-
     mask-composite: exclude;
-
-    filter: drop-shadow(
-      0 0 7px rgba(126, 90, 255, 0.30)
-    );
+    filter: drop-shadow(0 0 7px rgba(126, 90, 255, 0.30));
   }
 
   .table-row:last-child {
@@ -166,34 +166,18 @@
     color: var(--text-secondary);
   }
 
-  .table-row > div:nth-child(2)::before {
-    content: "Бонус";
-  }
-
-  .table-row > div:nth-child(3)::before {
-    content: "Промокод";
-  }
-
-  .table-row > div:nth-child(4)::before {
-    content: "Вейджер";
-  }
-
-  .table-row > div:nth-child(5)::before {
-    content: "Рейтинг";
-  }
-
-  .table-row > div:nth-child(6)::before {
-    content: "Действия";
-  }
+  .table-row > div:nth-child(2)::before { content: "Бонус"; }
+  .table-row > div:nth-child(3)::before { content: "Промокод"; }
+  .table-row > div:nth-child(4)::before { content: "Вейджер"; }
+  .table-row > div:nth-child(5)::before { content: "Рейтинг"; }
+  .table-row > div:nth-child(6)::before { content: "Действия"; }
 
   .table-row > .catalog-actions {
     width: 100%;
-
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     justify-content: stretch;
-
     column-gap: 6px;
   }
 
@@ -220,12 +204,171 @@
 
   .mobile-dock {
     display: block;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 8px 10px;
+    border-radius: 20px;
+  }
+
+  .mobile-dock a,
+  .mobile-dock button {
+    -webkit-tap-highlight-color: transparent;
   }
 
   .footer {
-    padding-bottom: 90px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  /* Нижнее меню открывает полноценный боковой drawer. */
+  .mobile-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 94;
+    background: rgba(3, 5, 12, 0.68);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.28s ease,
+      visibility 0s linear 0.28s;
+  }
+
+  .mobile-menu-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+
+  .mobile-side-menu {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 95;
+    width: min(86vw, 340px);
+    padding:
+      max(18px, env(safe-area-inset-top))
+      16px
+      max(24px, env(safe-area-inset-bottom));
+    flex-direction: column;
+    background:
+      radial-gradient(circle at 90% 5%, rgba(123, 60, 255, 0.20), transparent 34%),
+      linear-gradient(180deg, rgba(14, 18, 34, 0.995), rgba(8, 11, 22, 0.995));
+    border-left: 1px solid rgba(166, 104, 255, 0.22);
+    box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
+    transform: translateX(104%);
+    visibility: hidden;
+    transition:
+      transform 0.34s cubic-bezier(0.22, 0.8, 0.24, 1),
+      visibility 0s linear 0.34s;
+  }
+
+  .mobile-side-menu.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .mobile-side-menu__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 2px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .mobile-side-menu__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .mobile-side-menu__brand .logo-badge {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobile-side-menu__close {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.045);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.35rem;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-side-menu__nav {
+    display: grid;
+    gap: 8px;
+    padding: 18px 0;
+  }
+
+  .mobile-side-menu__nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text-secondary);
+    font-weight: 650;
+    transition:
+      color 0.22s ease,
+      background 0.22s ease,
+      border-color 0.22s ease,
+      transform 0.22s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-side-menu__nav a::after {
+    content: "›";
+    color: #a889ff;
+    font-size: 1.35rem;
+    transition: transform 0.22s ease;
+  }
+
+  .mobile-side-menu__nav a:active {
+    transform: scale(0.985);
+  }
+
+  .mobile-side-menu__nav a.active {
+    color: #fff;
+    border-color: rgba(138, 83, 255, 0.34);
+    background: linear-gradient(135deg, rgba(123, 60, 255, 0.16), rgba(178, 77, 255, 0.08));
+  }
+
+  .mobile-side-menu__note {
+    margin-top: auto;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  body.mobile-menu-open {
+    overflow: hidden;
   }
 }
+
 
 @media (max-width: 560px) {
   .hero h1,
@@ -233,13 +376,16 @@
     font-size: 1.95rem;
   }
 
-  .stats-grid,
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .cards-grid {
     grid-template-columns: 1fr;
   }
 
   .stat-card .num {
-    font-size: 1.7rem;
+    font-size: 1.45rem;
   }
 
   .methods-grid {
@@ -255,6 +401,7 @@
     align-items: stretch;
   }
 }
+
 
 /* Мобильная панель фильтров */
 @media (max-width: 1120px) {

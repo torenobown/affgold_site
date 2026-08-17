@@ -98,10 +98,10 @@ const footer = () => `
   <footer class="footer" id="footer">
     <div class="container"><div class="card card-pad">
       <div class="footer-grid">
-        <div><div class="footer-title">AFFGOLD</div><p class="seo-footer-note">Независимый каталог обзоров и справочных материалов. Условия предложений проверяйте на официальном сайте выбранного проекта.</p></div>
+        <div><div class="footer-title">AFFGOLD</div><p class="seo-footer-note">Каталог обзоров и справочных материалов. Условия могут измениться после даты проверки.</p></div>
         <div><div class="footer-title">Каталог</div><div class="footer-links"><a href="/catalog.html">Все проекты</a><a href="/ratings/">Рейтинги</a><a href="/bonuses/">Бонусы</a></div></div>
         <div><div class="footer-title">Материалы</div><div class="footer-links"><a href="/guides/">Гайды</a><a href="/payments/">Платежи</a></div></div>
-        <div><div class="footer-title">О проекте</div><div class="footer-links"><a href="/about/methodology/">Методика рейтинга</a><a href="/about/editorial-policy/">Редакционная политика</a><a href="/about/affiliate-disclosure/">Партнёрское уведомление</a><a href="/about/responsible-play/">Ответственная игра 18+</a><a href="/contacts/">Контакты</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия использования</a></div></div>
+        <div><div class="footer-title">О проекте</div><div class="footer-links"><a href="/about/methodology/">Методика</a><a href="/about/affiliate-disclosure/">Партнёрское уведомление</a><a href="/about/responsible-play/">Ответственная игра 18+</a><a href="/contacts/">Контакты</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия использования</a></div></div>
       </div>
       <div class="foot-note"><span>© 2026 AFFGOLD</span><span>18+ Играйте ответственно</span></div>
     </div></div>
