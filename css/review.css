@@ -325,6 +325,14 @@
 .review-page a:focus-visible,
 .review-page button:focus-visible { outline: 3px solid rgba(255,191,71,.76); outline-offset: 3px; }
 
+@media (min-width: 1081px) {
+  .review-hero-card__copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+}
+
 @media (max-width: 1080px) {
   .review-dashboard {
     grid-template-columns: 1fr;
