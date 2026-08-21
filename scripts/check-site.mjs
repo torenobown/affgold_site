@@ -6,9 +6,10 @@ import { loadProjects } from './lib/projects.mjs';
 const SCRIPT_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(SCRIPT_FILE), '..');
 const BASE_PATH = '/affgold_site';
-const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules']);
+const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules', 'beget-upload']);
 const PUBLISHABLE_EXTENSIONS = new Set(['.html', '.css', '.js', '.mjs', '.xml']);
 const LEGACY_SCAN_EXCLUSIONS = new Set([
+  'scripts/build-beget.mjs',
   'scripts/check-site.mjs',
   'scripts/optimize-assets.mjs'
 ]);
@@ -50,7 +51,7 @@ const walkFiles = (directory, predicate) => {
       .sort((left, right) => left.name.localeCompare(right.name, 'en'))
       .forEach((entry) => {
         if (entry.isDirectory()) {
-          if (IGNORED_DIRECTORIES.has(entry.name) || entry.name.startsWith('.affgold-')) return;
+          if (IGNORED_DIRECTORIES.has(entry.name) || entry.name.startsWith('.affgold-') || entry.name.startsWith('.beget-upload-build-')) return;
           visit(path.join(current, entry.name));
           return;
         }

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Clean-param: q&payout&types&sort /catalog.html
 
-Sitemap: https://www.affgoldprod.com/sitemap.xml
+Sitemap: https://affgoldprod.com/sitemap.xml

@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { buildStyles } from './build-css.mjs';
 import { loadProjects } from './lib/projects.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DOMAIN = String(process.env.AFFGOLD_SITE_URL || 'https://www.affgoldprod.com').replace(/\/+$/, '');
+const DOMAIN = String(process.env.AFFGOLD_SITE_URL || 'https://affgoldprod.com').replace(/\/+$/, '');
 if (!/^https:\/\/[^/]+$/i.test(DOMAIN)) {
   throw new Error('AFFGOLD_SITE_URL должен быть HTTPS-адресом без пути, например https://example.com.');
 }
@@ -26,6 +27,25 @@ const GENERATED_FILES = [
 const BUILD_ROOT = fs.mkdtempSync(path.join(ROOT, '.affgold-build-'));
 process.on('exit', () => fs.rmSync(BUILD_ROOT, { recursive: true, force: true }));
 buildStyles(projects, { outputDirectory: path.join(BUILD_ROOT, 'css') });
+
+const assetFiles = [path.join(BUILD_ROOT, 'css'), path.join(ROOT, 'js'), path.join(ROOT, 'assets')]
+  .flatMap((directory) => {
+    const files = [];
+    const visit = (current) => fs.readdirSync(current, { withFileTypes: true })
+      .sort((left, right) => left.name.localeCompare(right.name, 'en'))
+      .forEach((entry) => {
+        const target = path.join(current, entry.name);
+        if (entry.isDirectory()) visit(target);
+        else if (entry.isFile()) files.push(target);
+      });
+    visit(directory);
+    return files;
+  });
+const assetHash = crypto.createHash('sha256');
+assetFiles.forEach((file) => {
+  assetHash.update(fs.readFileSync(file));
+});
+const ASSET_VERSION = assetHash.digest('hex').slice(0, 10);
 
 /* ---------- Безопасная запись и URL ---------- */
 
@@ -76,10 +96,40 @@ const applyRelativePaths = (html, route) => html.replace(
   (match, attribute, url) => `${attribute}${relativeSiteUrl(route, url)}`
 );
 
+const versionAssetUrl = (rawUrl) => {
+  const value = String(rawUrl);
+  if (!value || /^(?:data:|https?:|\/\/|#)/i.test(value)) return value;
+
+  const hashIndex = value.indexOf('#');
+  const beforeHash = hashIndex >= 0 ? value.slice(0, hashIndex) : value;
+  const fragment = hashIndex >= 0 ? value.slice(hashIndex) : '';
+  const queryIndex = beforeHash.indexOf('?');
+  const pathname = queryIndex >= 0 ? beforeHash.slice(0, queryIndex) : beforeHash;
+  const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : '';
+  if (!/\.(?:css|js|svg|png|jpe?g|webp|avif)$/i.test(pathname)) return value;
+
+  const parameters = query.split('&').filter(Boolean).filter((item) => !/^v=/i.test(item));
+  parameters.push(`v=${ASSET_VERSION}`);
+  return `${pathname}?${parameters.join('&')}${fragment}`;
+};
+
+const applyAssetVersions = (html) => html
+  .replace(/\b(href|src)=(['"])([^'"]*)\2/gi, (match, name, quote, url) => `${name}=${quote}${versionAssetUrl(url)}${quote}`)
+  .replace(/\bsrcset=(['"])([^'"]*)\1/gi, (match, quote, value) => {
+    if (/^\s*data:/i.test(value)) return match;
+    const candidates = value.split(',').map((candidate) => {
+      const parts = candidate.trim().split(/\s+/);
+      if (!parts[0]) return candidate;
+      parts[0] = versionAssetUrl(parts[0]);
+      return parts.join(' ');
+    });
+    return `srcset=${quote}${candidates.join(', ')}${quote}`;
+  });
+
 const writeRoute = (route, content, index = true) => {
   const target = routeToFile(route);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, applyRelativePaths(content, route));
+  fs.writeFileSync(target, applyRelativePaths(applyAssetVersions(content), route));
   if (index) writtenRoutes.push(route);
 };
 
@@ -628,7 +678,7 @@ const catalogWithCards = replaceManagedBlock(
   /(<span id="catalog-count" aria-live="polite">).*?(<\/span>)/,
   `$1Найдено проектов: ${projects.length}$2`
 );
-fs.writeFileSync(path.join(BUILD_ROOT, 'catalog.html'), catalogWithCards);
+fs.writeFileSync(path.join(BUILD_ROOT, 'catalog.html'), applyAssetVersions(catalogWithCards));
 
 const homePath = path.join(ROOT, 'index.html');
 const organizationSchema = { '@context': 'https://schema.org', '@type': 'Organization', name: 'AFFGOLD', url: `${DOMAIN}/` };
@@ -646,7 +696,7 @@ const homeWithCards = replaceManagedBlock(
   /(<div class="num" data-project-count data-count=")\d+(" data-suffix="">)\d+(<\/div>)/,
   `$1${projects.length}$2${projects.length}$3`
 );
-fs.writeFileSync(path.join(BUILD_ROOT, 'index.html'), homeWithCards);
+fs.writeFileSync(path.join(BUILD_ROOT, 'index.html'), applyAssetVersions(homeWithCards));
 
 const legacyReviewSource = fs.readFileSync(path.join(ROOT, 'review.html'), 'utf8');
 const legacyReviewRoutes = Object.fromEntries(projects.map((project) => [project.id, project.slug || project.id]));
@@ -654,7 +704,7 @@ const legacyReview = legacyReviewSource.replace(
   /const routes = \{.*?\};/s,
   `const routes = ${JSON.stringify(legacyReviewRoutes)};`
 );
-fs.writeFileSync(path.join(BUILD_ROOT, 'review.html'), legacyReview);
+fs.writeFileSync(path.join(BUILD_ROOT, 'review.html'), applyAssetVersions(legacyReview));
 
 const sitemapRoutes = ['/', '/catalog.html', ...writtenRoutes];
 const reviewUpdatedByRoute = new Map(projects.map((project) => [projectUrl(project), project.lastUpdated || UPDATED]));
@@ -668,7 +718,7 @@ fs.writeFileSync(
 const notFound = page({ route: '/404.html', active: '', eyebrow: 'Ошибка 404', h1: 'Страница не найдена', title: 'Страница не найдена — AFFGOLD', description: 'Запрошенная страница не найдена.', lead: 'Возможно, адрес изменился. Перейдите в каталог или выберите раздел сайта.', breadcrumbs: [{ name: '404', url: '/404.html' }], index: false,
   content: `<div class="seo-grid"><a class="card seo-card" href="/catalog.html"><span class="seo-card-icon">☷</span><h2>Каталог</h2><p>Все проекты и фильтры.</p><span class="seo-card-link">Открыть →</span></a><a class="card seo-card" href="/guides/"><span class="seo-card-icon">?</span><h2>Гайды</h2><p>Полезные инструкции.</p><span class="seo-card-link">Открыть →</span></a></div>`
 });
-fs.writeFileSync(path.join(BUILD_ROOT, '404.html'), applyRelativePaths(notFound, '/404.html'));
+fs.writeFileSync(path.join(BUILD_ROOT, '404.html'), applyRelativePaths(applyAssetVersions(notFound), '/404.html'));
 
 assertBuildComplete();
 publishGeneratedSite();

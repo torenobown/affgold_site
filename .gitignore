@@ -3,3 +3,6 @@ node_modules/
 .affgold-backup-*/
 .lighthouseci/
 lighthouse-*.json
+beget-upload/
+affgold-beget.zip
+.beget-upload-build-*/

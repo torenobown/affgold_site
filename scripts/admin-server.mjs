@@ -300,7 +300,7 @@ const publishProjects = async (request, response) => {
   }
 };
 
-const previewBasePath = String(process.env.AFFGOLD_BASE_PATH ?? '/affgold_site')
+const previewBasePath = String(process.env.AFFGOLD_BASE_PATH ?? '')
   .trim().replace(/^\/*/, '/').replace(/\/+$/, '');
 
 const resolveStaticFile = async (requestUrl) => {

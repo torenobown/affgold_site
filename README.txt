@@ -82,6 +82,8 @@ scripts/build-seo.mjs. Файл размечен секциями «Общие �
 
 На Windows полную сборку и проверку также запускает rebuild-site.bat.
 
+Готовый ZIP для загрузки на Beget создаёт build-beget.bat.
+
 
 КАК УСТРОЕНА СБОРКА
 
@@ -100,21 +102,33 @@ scripts/build-seo.mjs
 scripts/check-site.mjs
   Проверяет итоговый сайт перед публикацией. Ошибка даёт ненулевой exit code.
 
+scripts/build-beget.mjs
+  Копирует только публичную часть сайта в beget-upload и повторно проверяет
+  комплект. build-beget.bat дополнительно создаёт affgold-beget.zip.
+
 scripts/admin-server.mjs
   Работает только на 127.0.0.1, не отдаёт .git/scripts, ограничивает размер
   запросов, проверяет свежесть базы и объединяет сохранение, сборку и проверку
   в одну транзакцию.
 
 
-ПУБЛИКАЦИЯ И BASE PATH
+ПУБЛИКАЦИЯ НА BEGET
 
-По умолчанию ссылки собираются для GitHub Pages с префиксом /affgold_site.
-Локальный редактор понимает этот префикс автоматически.
+1. Запустите build-beget.bat.
+2. Полученный affgold-beget.zip загрузите в корневую директорию домена,
+   указанную в разделе «Сайты» панели Beget.
+3. Распакуйте архив с заменой файлов. В корне домена должны лежать именно
+   index.html, css/, assets/, js/ и reviews/, а не папка beget-upload целиком.
+4. Проверьте в браузере прямые адреса:
+   https://affgoldprod.com/css/home-page.css
+   https://affgoldprod.com/assets/images/velora-logo.svg
+   https://affgoldprod.com/catalog.html
 
-Для домена, где сайт лежит прямо в корне, запустите в PowerShell:
-  $env:AFFGOLD_BASE_PATH=''; node scripts/build-seo.mjs
+Все внутренние ссылки в текущей сборке относительные, поэтому сайт работает и
+в корне домена, и в подпапке. AFFGOLD_BASE_PATH для публикации не требуется.
 
-Если меняется сам домен, дополнительно задайте его без пути:
+По умолчанию canonical и sitemap собираются для https://affgoldprod.com.
+Для другого домена задайте перед сборкой HTTPS-адрес без пути:
   $env:AFFGOLD_SITE_URL='https://example.com'
 
 Админка на опубликованном статическом сайте не может записывать репозиторий.
