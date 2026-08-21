@@ -127,6 +127,20 @@
 }
 .review-hero-facts dt { color: #858da9; font-size: .69rem; }
 .review-hero-facts dd { margin: 4px 0 0; color: #f1f2ff; font-size: .82rem; font-weight: 760; overflow-wrap: anywhere; }
+.review-hero-card__source {
+  position: relative;
+  z-index: 1;
+  margin: -7px 0 0;
+  color: #8f97b5;
+  font-size: .76rem;
+  line-height: 1.55;
+}
+.review-hero-card__source a {
+  color: #c8baff;
+  text-decoration: underline;
+  text-decoration-color: rgba(200,186,255,.34);
+  text-underline-offset: 3px;
+}
 .review-score-card {
   grid-area: score;
   min-width: 0;
@@ -242,6 +256,8 @@
   .review-highlight-card:hover { transform: translateY(-3px); border-color: rgba(178,77,255,.22); box-shadow: 0 24px 60px rgba(0,0,0,.38); }
   .review-inline-link:hover,
   .review-toc a:hover { color: #fff; }
+  .review-hero-card__source a:hover,
+  .review-notice a:hover { color: #fff; text-decoration-color: currentColor; }
 }
 .review-card-icon {
   width: 50px;
@@ -284,8 +300,6 @@
 .review-cta-card__bonus { margin: 18px 0 12px; color: #ffd26f; font-size: 1.25rem; }
 .review-cta-card .promo-code { width: 100%; min-height: 48px; background: rgba(9,11,24,.62); }
 .review-cta-card .btn { width: 100%; margin-top: 10px; }
-.review-cta-card small { margin-top: 13px; color: #888fa7; font-size: .7rem; line-height: 1.45; }
-
 .review-notice {
   grid-area: notice;
   min-width: 0;
@@ -301,6 +315,12 @@
 .review-notice__icon svg { width: 24px; height: 24px; }
 .review-notice p { margin: 0; color: #c9c2af; font-size: .83rem; line-height: 1.55; }
 .review-notice strong { color: #ffe1a0; }
+.review-notice a {
+  color: #ffe1a0;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,225,160,.4);
+  text-underline-offset: 3px;
+}
 
 .review-content-section { padding-top: 42px; }
 .review-body-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 24px; align-items: start; }

@@ -1,7 +1,7 @@
 (() => {
-  const DRAFT_VERSION = 3;
-  const STORAGE_KEY = 'affgold-projects-admin-draft-v3';
-  const LEGACY_STORAGE_KEYS = ['affgold-projects-admin-draft-v2'];
+  const DRAFT_VERSION = 4;
+  const STORAGE_KEY = 'affgold-projects-admin-draft-v4';
+  const LEGACY_STORAGE_KEYS = ['affgold-projects-admin-draft-v3', 'affgold-projects-admin-draft-v2'];
   const DEFAULT_THEME = {
     primary: '#9767ff',
     secondary: '#b24dff',
@@ -16,6 +16,8 @@
     payouts: 'scorePayouts',
     support: 'scoreSupport'
   };
+  const PROJECT_STATUSES = new Set(['draft', 'published', 'archived']);
+  const STATUS_LABELS = { draft: 'Черновик', published: 'Опубликован', archived: 'Архив' };
 
   let sourceProjects = clone(window.AFFGOLD_PROJECTS || []);
   let sourceSignature = signature(sourceProjects);
@@ -53,9 +55,45 @@
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   const parseList = (value = '') => [...new Set(String(value).split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
+  const parseLines = (value = '') => [...new Set(String(value).split(/\r?\n/).map((item) => item.trim()).filter(Boolean))];
   const safeColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || '')) ? String(value).toLowerCase() : fallback;
-  const logoSrc = (value = '') => /^(data:image\/(?:png|jpeg|webp);base64,|https?:)/i.test(value) ? value : `../${value}`;
-  const today = () => new Date().toISOString().slice(0, 10);
+  const logoSrc = (value = '') => /^data:image\/(?:png|jpeg|webp);base64,/i.test(value) ? value : `../${value}`;
+  const today = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const projectStatus = (project) => PROJECT_STATUSES.has(project?.status) ? project.status : 'published';
+  const formatSources = (sources = []) => sources.map((source) => [source.label, source.url, source.checkedAt].filter(Boolean).join(' | ')).join('\n');
+  const formatChangelog = (entries = []) => entries.map((entry) => `${entry.date} | ${entry.note}`).join('\n');
+  const normalizeRedirectAlias = (value) => {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) return '';
+    return `/${trimmed.replace(/^\/+/, '')}`;
+  };
+  const parseSources = (value = '') => parseLines(value).map((line, index) => {
+    const parts = line.split('|').map((part) => part.trim());
+    if (parts.length < 2 || parts.length > 3 || !parts[0] || !parts[1]) {
+      throw new Error(`Источник ${index + 1}: используйте формат «Название | https://адрес | YYYY-MM-DD».`);
+    }
+    return { label: parts[0], url: parts[1], ...(parts[2] ? { checkedAt: parts[2] } : {}) };
+  });
+  const parseChangelog = (value = '') => parseLines(value).map((line, index) => {
+    const separator = line.indexOf('|');
+    if (separator < 1 || !line.slice(separator + 1).trim()) {
+      throw new Error(`Запись журнала ${index + 1}: используйте формат «YYYY-MM-DD | описание».`);
+    }
+    return { date: line.slice(0, separator).trim(), note: line.slice(separator + 1).trim() };
+  });
+  const averageScore = (project) => Math.round((Object.keys(SCORE_FIELDS)
+    .reduce((total, key) => total + Number(project.scores?.[key] || 0), 0) / Object.keys(SCORE_FIELDS).length) * 10) / 10;
+  const contentFingerprint = (project) => {
+    const copy = clone(project || {});
+    ['theme', 'status', 'lastUpdated', 'publishedAt', 'verifiedAt', 'changelog', 'redirectAliases'].forEach((key) => delete copy[key]);
+    return JSON.stringify(copy);
+  };
   const removeDraft = () => {
     try { localStorage.removeItem(STORAGE_KEY); }
     catch { /* Приватный режим может запрещать локальное хранилище. */ }
@@ -65,6 +103,18 @@
     const rating = Number(project?.rating ?? 4.5);
     return {
       ...project,
+      status: projectStatus(project),
+      publishedAt: project?.publishedAt || '',
+      verifiedAt: project?.verifiedAt || '',
+      offerExpiresAt: project?.offerExpiresAt || '',
+      reviewerId: project?.reviewerId || '',
+      operator: project?.operator || '',
+      licenseAuthority: project?.licenseAuthority || '',
+      licenseNumber: project?.licenseNumber || '',
+      jurisdictions: Array.isArray(project?.jurisdictions) ? project.jurisdictions : [],
+      sources: Array.isArray(project?.sources) ? project.sources : [],
+      redirectAliases: Array.isArray(project?.redirectAliases) ? [...new Set(project.redirectAliases)] : [],
+      changelog: Array.isArray(project?.changelog) ? project.changelog : [],
       scores: {
         reliability: rating,
         bonuses: rating,
@@ -240,23 +290,42 @@
   };
 
   const render = () => {
-    count.textContent = `Проектов: ${projects.length}`;
+    const statusCounts = projects.reduce((result, project) => {
+      result[projectStatus(project)] += 1;
+      return result;
+    }, { draft: 0, published: 0, archived: 0 });
+    count.textContent = `Проектов: ${projects.length} · опубликовано ${statusCounts.published} · черновиков ${statusCounts.draft} · в архиве ${statusCounts.archived}`;
     if (!projects.length) {
       list.innerHTML = '<div class="card admin-empty">Список пуст. Нажмите «Добавить проект».</div>';
       return;
     }
     list.innerHTML = projects.map((project, index) => {
-      const theme = withDefaults(project).theme;
+      const normalized = withDefaults(project);
+      const theme = normalized.theme;
+      const currentStatus = normalized.status;
+      const expiration = normalized.offerExpiresAt && normalized.offerExpiresAt < today()
+        ? '<span class="admin-project-expired">Оффер просрочен</span>'
+        : '';
+      const destructiveAction = currentStatus === 'published'
+        ? `<button class="btn btn-secondary btn-sm admin-delete" type="button" data-delete="${index}">В архив</button>`
+        : currentStatus === 'draft' && !normalized.publishedAt
+          ? `<button class="btn btn-secondary btn-sm admin-delete" type="button" data-delete="${index}">Удалить черновик</button>`
+          : '<span class="admin-archived-note">Сохранён для истории</span>';
       return `
-      <article class="card admin-project-row">
+      <article class="card admin-project-row" data-status="${currentStatus}">
         <img src="${escapeHtml(logoSrc(project.logo || 'assets/icons/favicon.svg'))}" alt="${escapeHtml(project.name)}">
-        <div><div class="admin-project-title"><h2>${escapeHtml(project.name)}</h2><span class="admin-theme-dot" style="--admin-theme:${safeColor(theme.primary, DEFAULT_THEME.primary)}" title="Основной цвет"></span><span class="admin-theme-dot" style="--admin-theme:${safeColor(theme.secondary, DEFAULT_THEME.secondary)}" title="Дополнительный цвет"></span></div><p>${escapeHtml(project.url || 'Офферная ссылка не указана')}</p><div class="admin-project-meta"><span>${escapeHtml(project.bonus)}</span><span>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</span><span>★ ${Number(project.rating || 0).toFixed(1)}</span></div></div>
-        <div class="admin-row-actions"><button class="btn btn-secondary btn-sm" type="button" data-edit="${index}">Изменить</button><button class="btn btn-secondary btn-sm" type="button" data-duplicate="${index}">Дублировать</button><button class="btn btn-secondary btn-sm admin-delete" type="button" data-delete="${index}">Удалить</button></div>
+        <div><div class="admin-project-title"><h2>${escapeHtml(project.name)}</h2><span class="admin-status-badge admin-status-badge--${currentStatus}">${STATUS_LABELS[currentStatus]}</span><span class="admin-theme-dot" style="--admin-theme:${safeColor(theme.primary, DEFAULT_THEME.primary)}" title="Основной цвет"></span><span class="admin-theme-dot" style="--admin-theme:${safeColor(theme.secondary, DEFAULT_THEME.secondary)}" title="Дополнительный цвет"></span></div><p>${escapeHtml(project.url || 'Офферная ссылка не указана')}</p><div class="admin-project-meta"><span>${escapeHtml(project.bonus)}</span><span>${escapeHtml(project.promoCode || 'BETGOLDTEAM')}</span><span>★ ${Number(project.rating || 0).toFixed(1)}</span>${expiration}</div></div>
+        <div class="admin-row-actions"><button class="btn btn-secondary btn-sm" type="button" data-edit="${index}">Изменить</button><button class="btn btn-secondary btn-sm" type="button" data-duplicate="${index}">Дублировать</button>${destructiveAction}</div>
       </article>`;
     }).join('');
   };
 
   const field = (name) => form.elements.namedItem(name);
+
+  const updateCalculatedRating = () => {
+    const scores = Object.fromEntries(Object.entries(SCORE_FIELDS).map(([key, input]) => [key, Number(field(input).value)]));
+    field('rating').value = averageScore({ scores }).toFixed(1);
+  };
 
   const openForm = (index = -1) => {
     form.reset();
@@ -265,18 +334,26 @@
     const project = index >= 0 ? withDefaults(projects[index]) : null;
     title.textContent = project ? `Изменить ${project.name}` : 'Новый проект';
     const defaults = project || withDefaults({
-      id: '', slug: '', lastUpdated: today(), name: '', logo: 'assets/icons/favicon.svg', url: '', promoCode: 'BETGOLDTEAM', rating: 4.5,
+      id: '', slug: '', status: 'draft', lastUpdated: today(), publishedAt: '', verifiedAt: '', offerExpiresAt: '', reviewerId: '',
+      name: '', logo: 'assets/icons/favicon.svg', url: '', promoCode: 'BETGOLDTEAM', rating: 4.5,
       verdict: 'Хорошо', bonus: '', bonusSubtitle: 'На первый депозит', wager: 35,
       bonusTypes: ['welcome', 'freespins'], payout: 'hour', payoutLabel: 'До 1 часа',
       tags: ['Мобильная версия'], description: '', features: [], payments: ['VISA', 'Mastercard'],
+      operator: '', licenseAuthority: '', licenseNumber: '', jurisdictions: [], sources: [], redirectAliases: [], changelog: [],
       tabs: { bonuses: '', slots: '', payments: '' }
     });
-    ['id', 'slug', 'name', 'logo', 'url', 'promoCode', 'rating', 'verdict', 'bonus', 'bonusSubtitle', 'wager', 'payout', 'payoutLabel', 'description']
+    ['status', 'reviewerId', 'lastUpdated', 'publishedAt', 'verifiedAt', 'offerExpiresAt', 'id', 'slug', 'name', 'logo', 'url', 'promoCode', 'rating', 'verdict', 'bonus', 'bonusSubtitle', 'wager', 'payout', 'payoutLabel', 'description', 'operator', 'licenseAuthority', 'licenseNumber']
       .forEach((name) => { field(name).value = defaults[name] ?? ''; });
     field('bonusTypes').value = (defaults.bonusTypes || []).join(', ');
     field('tags').value = (defaults.tags || []).join(', ');
     field('features').value = (defaults.features || []).join('\n');
     field('payments').value = (defaults.payments || []).join(', ');
+    field('jurisdictions').value = (defaults.jurisdictions || []).join(', ');
+    field('sources').value = formatSources(defaults.sources);
+    field('redirectAliases').value = (defaults.redirectAliases || []).join('\n');
+    field('changelog').value = formatChangelog(defaults.changelog);
+    field('changeNote').value = '';
+    field('confirmAddressChange').checked = false;
     field('tabBonuses').value = defaults.tabs?.bonuses || '';
     field('tabSlots').value = defaults.tabs?.slots || '';
     field('tabPayments').value = defaults.tabs?.payments || '';
@@ -286,6 +363,13 @@
     field('themeButtonStart').value = defaults.theme.buttonStart;
     field('themeButtonEnd').value = defaults.theme.buttonEnd;
     field('themeOnPrimary').value = defaults.theme.onPrimary;
+    const protectedIdentity = Boolean(project && (projectStatus(project) !== 'draft' || project.publishedAt));
+    field('id').readOnly = protectedIdentity;
+    document.querySelector('[data-id-help]').textContent = protectedIdentity
+      ? 'ID уже опубликован и защищён от изменения.'
+      : 'После публикации ID фиксируется навсегда.';
+    document.querySelector('[data-seo-guard]').hidden = !protectedIdentity;
+    updateCalculatedRating();
     dialog.showModal();
   };
 
@@ -293,12 +377,20 @@
 
   const readProject = () => {
     const index = Number(field('editIndex').value);
-    const previous = index >= 0 ? projects[index] : {};
-    return {
+    const previous = index >= 0 ? withDefaults(projects[index]) : {};
+    const scores = Object.fromEntries(Object.entries(SCORE_FIELDS).map(([key, input]) => [key, Number(field(input).value)]));
+    const statusValue = field('status').value;
+    const redirectAliases = parseLines(field('redirectAliases').value).map(normalizeRedirectAlias);
+    const project = {
       ...previous,
+      status: statusValue,
+      publishedAt: field('publishedAt').value,
+      verifiedAt: field('verifiedAt').value,
+      offerExpiresAt: field('offerExpiresAt').value,
+      reviewerId: field('reviewerId').value.trim().toLowerCase(),
       id: field('id').value.trim().toLowerCase(),
       slug: field('slug').value.trim().toLowerCase(),
-      lastUpdated: today(),
+      lastUpdated: previous.lastUpdated || today(),
       name: field('name').value.trim(),
       logo: field('logo').value.trim(),
       theme: {
@@ -308,7 +400,7 @@
         buttonEnd: field('themeButtonEnd').value.toLowerCase(),
         onPrimary: field('themeOnPrimary').value.toLowerCase()
       },
-      rating: Number(field('rating').value),
+      rating: averageScore({ scores }),
       verdict: field('verdict').value.trim(),
       bonus: field('bonus').value.trim(),
       promoCode: field('promoCode').value.trim() || 'BETGOLDTEAM',
@@ -320,15 +412,36 @@
       url: field('url').value.trim(),
       tags: parseList(field('tags').value),
       description: field('description').value.trim(),
-      features: parseList(field('features').value),
-      scores: Object.fromEntries(Object.entries(SCORE_FIELDS).map(([key, input]) => [key, Number(field(input).value)])),
+      features: parseLines(field('features').value),
+      scores,
       tabs: {
         bonuses: field('tabBonuses').value.trim(),
         slots: field('tabSlots').value.trim(),
         payments: field('tabPayments').value.trim()
       },
-      payments: parseList(field('payments').value)
+      payments: parseList(field('payments').value),
+      operator: field('operator').value.trim(),
+      licenseAuthority: field('licenseAuthority').value.trim(),
+      licenseNumber: field('licenseNumber').value.trim(),
+      jurisdictions: parseList(field('jurisdictions').value),
+      sources: parseSources(field('sources').value),
+      redirectAliases: [...new Set(redirectAliases)],
+      changelog: parseChangelog(field('changelog').value)
     };
+
+    if (index < 0 || contentFingerprint(project) !== contentFingerprint(previous)) project.lastUpdated = today();
+    if (statusValue === 'published' && !project.publishedAt && (index < 0 || projectStatus(previous) !== 'published')) {
+      project.publishedAt = today();
+    }
+    if (previous.slug && previous.slug !== project.slug) {
+      project.redirectAliases = [...new Set([...project.redirectAliases, `/reviews/${previous.slug}/`])];
+    }
+    const changeNote = field('changeNote').value.trim();
+    if (changeNote) project.changelog.push({ date: today(), note: changeNote });
+    if (previous.status && previous.status !== project.status) {
+      project.changelog.push({ date: today(), note: `Статус изменён: ${STATUS_LABELS[previous.status]} → ${STATUS_LABELS[project.status]}` });
+    }
+    return project;
   };
 
   const uniqueCopyKey = (base, key) => {
@@ -348,6 +461,12 @@
     copy.id = uniqueCopyKey(original.id, 'id');
     copy.slug = uniqueCopyKey(original.slug || original.id, 'slug');
     copy.name = `${original.name} — копия`;
+    copy.status = 'draft';
+    copy.publishedAt = '';
+    copy.verifiedAt = '';
+    copy.offerExpiresAt = '';
+    copy.redirectAliases = [];
+    copy.changelog = [{ date: today(), note: `Создан черновик на основе «${original.name}»` }];
     copy.lastUpdated = today();
     projects.splice(index + 1, 0, copy);
     saveDraft();
@@ -359,11 +478,52 @@
     event.preventDefault();
     if (!form.reportValidity()) return;
     const index = Number(field('editIndex').value);
-    const project = readProject();
+    const previous = index >= 0 ? withDefaults(projects[index]) : null;
+    let project;
     try {
-      if (new URL(project.url).protocol !== 'https:') throw new Error('HTTPS required');
+      project = readProject();
+    } catch (parseError) {
+      error.textContent = parseError.message || 'Проверьте формат источников и журнала изменений.';
+      error.hidden = false;
+      return;
+    }
+    try {
+      const offerUrl = new URL(project.url);
+      if (offerUrl.protocol !== 'https:' || offerUrl.username || offerUrl.password) throw new Error('HTTPS required');
     } catch {
       error.textContent = 'Офферная ссылка должна быть полным безопасным адресом https://…';
+      error.hidden = false;
+      return;
+    }
+    for (const [sourceIndex, source] of project.sources.entries()) {
+      try {
+        const sourceUrl = new URL(source.url);
+        if (sourceUrl.protocol !== 'https:' || sourceUrl.username || sourceUrl.password) throw new Error('HTTPS required');
+      } catch {
+        error.textContent = `Источник ${sourceIndex + 1}: укажите полный безопасный адрес https://…`;
+        error.hidden = false;
+        return;
+      }
+      if (source.checkedAt && !/^\d{4}-\d{2}-\d{2}$/.test(source.checkedAt)) {
+        error.textContent = `Источник ${sourceIndex + 1}: дата проверки должна иметь формат YYYY-MM-DD.`;
+        error.hidden = false;
+        return;
+      }
+    }
+    if (previous && (projectStatus(previous) !== 'draft' || previous.publishedAt)) {
+      if (project.id !== previous.id) {
+        error.textContent = 'ID опубликованного проекта менять нельзя. Для нового проекта используйте «Дублировать».';
+        error.hidden = false;
+        return;
+      }
+      if (project.slug !== previous.slug && !field('confirmAddressChange').checked) {
+        error.textContent = 'Подтвердите смену опубликованного SEO-адреса. Старый путь будет сохранён для редиректа.';
+        error.hidden = false;
+        return;
+      }
+    }
+    if (previous && projectStatus(previous) !== 'draft' && project.status === 'draft') {
+      error.textContent = 'Ранее опубликованный проект нельзя вернуть в черновик. Используйте архив или опубликуйте его снова.';
       error.hidden = false;
       return;
     }
@@ -382,6 +542,12 @@
       error.hidden = false;
       return;
     }
+    const newlyPublished = project.status === 'published' && (!previous || projectStatus(previous) !== 'published');
+    if (newlyPublished && (!project.reviewerId || !project.verifiedAt || !project.sources.length || project.sources.some((source) => !source.checkedAt))) {
+      error.textContent = 'Перед публикацией укажите ответственного редактора, дату проверки и хотя бы один источник с датой проверки.';
+      error.hidden = false;
+      return;
+    }
     if (index >= 0) projects[index] = project;
     else projects.push(project);
     saveDraft();
@@ -397,17 +563,28 @@
     const remove = event.target.closest('[data-delete]');
     if (!remove) return;
     const index = Number(remove.dataset.delete);
-    if (projects.length === 1) {
-      setStatus('В базе должен остаться хотя бы один проект', true);
-      return;
+    const project = withDefaults(projects[index]);
+    if (project.status === 'published') {
+      if (!confirm(`Перевести опубликованный проект «${project.name}» в архив? Его данные и SEO-история сохранятся.`)) return;
+      projects[index] = {
+        ...project,
+        status: 'archived',
+        changelog: [...project.changelog, { date: today(), note: 'Проект переведён в архив' }]
+      };
+    } else {
+      if (projects.length === 1) {
+        setStatus('В базе должен остаться хотя бы один проект', true);
+        return;
+      }
+      if (!confirm(`Удалить неопубликованный черновик «${project.name}»?`)) return;
+      projects.splice(index, 1);
     }
-    if (!confirm(`Удалить проект «${projects[index].name}»?`)) return;
-    projects.splice(index, 1);
     saveDraft();
     render();
   });
 
   document.querySelector('[data-add]').addEventListener('click', () => openForm());
+  Object.values(SCORE_FIELDS).forEach((input) => field(input).addEventListener('input', updateCalculatedRating));
   document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', closeForm));
   document.querySelector('[data-download]').addEventListener('click', downloadDatabase);
   document.querySelector('[data-save-file]').addEventListener('click', saveDatabaseFile);

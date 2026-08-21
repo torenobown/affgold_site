@@ -5,4 +5,6 @@ node_modules/
 lighthouse-*.json
 beget-upload/
 affgold-beget.zip
+affgold-beget.zip.tmp-*
+affgold-beget.zip.backup-*
 .beget-upload-build-*/

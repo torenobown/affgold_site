@@ -32,11 +32,18 @@
 .admin-project-title { display: flex; align-items: center; gap: 7px; }
 .admin-project-title h2 { margin-right: 3px; }
 .admin-theme-dot { width: 10px; height: 10px; border: 1px solid rgba(255,255,255,.25); border-radius: 50%; background: var(--admin-theme); box-shadow: 0 0 10px color-mix(in srgb,var(--admin-theme) 55%,transparent); }
+.admin-status-badge { padding: 4px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: #c8cce0; font-size: .68rem; font-weight: 800; letter-spacing: .03em; }
+.admin-status-badge--published { border-color: rgba(45,223,131,.28); background: rgba(45,223,131,.08); color: #76efad; }
+.admin-status-badge--draft { border-color: rgba(255,174,67,.3); background: rgba(255,174,67,.08); color: #ffc66e; }
+.admin-status-badge--archived { color: #8f98b3; }
+.admin-project-row[data-status="archived"] { opacity: .72; }
 .admin-project-row p { margin: 0; color: var(--text-secondary); font-size: .9rem; overflow-wrap: anywhere; }
 .admin-project-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
 .admin-project-meta span { padding: 6px 9px; border-radius: 999px; background: rgba(255,255,255,.04); color: #c8cce0; font-size: .78rem; }
+.admin-project-meta .admin-project-expired { background: rgba(255,92,122,.1); color: #ff9db0; }
 .admin-row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .admin-delete { color: #ff8ca1; }
+.admin-archived-note { align-self: center; color: #77819e; font-size: .76rem; }
 .admin-dialog { width: min(900px,calc(100% - 24px)); max-height: calc(100vh - 30px); padding: 0; border: 1px solid rgba(255,255,255,.1); border-radius: 22px; background: #0d1120; color: var(--text); box-shadow: 0 30px 90px rgba(0,0,0,.65); }
 .admin-dialog::backdrop { background: rgba(2,4,10,.78); backdrop-filter: blur(5px); }
 .admin-dialog form { padding: 24px; }
@@ -50,10 +57,14 @@
 .admin-form-grid small { color: #7f88a5; }
 .admin-form-grid input,.admin-form-grid select,.admin-form-grid textarea { width: 100%; padding: 12px 13px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.035); color: var(--text); outline: none; resize: vertical; }
 .admin-form-grid input:focus,.admin-form-grid select:focus,.admin-form-grid textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(123,60,255,.12); }
+.admin-form-grid input[readonly] { background: rgba(255,255,255,.018); color: #959db7; cursor: not-allowed; }
 .admin-form-grid option { background: #111629; }
 .admin-form-grid .admin-color-field { grid-template-columns: minmax(0,1fr) 54px; align-items: center; min-height: 50px; padding: 8px 9px 8px 13px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(255,255,255,.025); }
 .admin-form-grid .admin-color-field input[type="color"] { width: 46px; height: 34px; padding: 2px; border-radius: 9px; cursor: pointer; }
 .admin-wide { grid-column: 1 / -1; }
+.admin-seo-guard { padding: 13px 14px; border: 1px solid rgba(255,174,67,.24); border-radius: 12px; background: rgba(255,174,67,.055); }
+.admin-form-grid label > .admin-checkbox { display: flex; align-items: center; gap: 9px; color: #e4e7f2; font-size: .88rem; font-weight: 600; }
+.admin-form-grid .admin-checkbox input { flex: 0 0 auto; width: 18px; height: 18px; padding: 0; accent-color: var(--accent); }
 .admin-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .admin-error { margin-top: 15px; padding: 12px 14px; border-radius: 12px; background: rgba(255,92,122,.1); color: #ff9db0; }
 .admin-empty { padding: 38px; text-align: center; color: var(--text-secondary); }

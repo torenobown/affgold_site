@@ -48,9 +48,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow);
 
-  scale: 1;
   transition:
-    scale .25s ease,
     box-shadow 0.25s ease,
     border-color 0.25s ease;
 }
@@ -59,7 +57,6 @@
   transition:
     opacity .55s ease var(--reveal-delay, 0ms),
     translate .55s cubic-bezier(.2,.75,.3,1) var(--reveal-delay, 0ms),
-    scale .25s ease,
     box-shadow 0.25s ease,
     border-color 0.25s ease;
 }
@@ -73,20 +70,19 @@
   display: block;
   object-fit: cover;
   object-position: center;
-
-  transition: transform 0.35s ease;
+  filter: brightness(1) saturate(1);
+  transition: filter 0.25s ease;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .hero-panel:hover {
-    animation-play-state: paused;
-    scale: 1.015;
     border-color: rgba(154, 83, 255, 0.45);
     box-shadow:
       0 22px 55px rgba(0, 0, 0, 0.42),
       0 0 34px rgba(123, 60, 255, 0.28);
   }
-  .hero-panel:hover img { transform: scale(1.04); }
+  .hero-panel:hover img { filter: brightness(1.045) saturate(1.08); }
+  .hero-panel:hover::after { opacity: 1; }
 }
 
 .hero-panel::after {
@@ -96,7 +92,9 @@
   height: 120px;
   background: radial-gradient(circle, rgba(123,60,255,.28), transparent 65%);
   filter: blur(14px);
+  opacity: .72;
   pointer-events: none;
+  transition: opacity .25s ease;
 }
 
 

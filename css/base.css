@@ -73,6 +73,7 @@ button, input, select { font: inherit; }
   gap: 24px;
 }
 .logo {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -104,8 +105,14 @@ button, input, select { font: inherit; }
   display: grid;
   place-items: center;
   box-shadow: 0 10px 30px rgba(255, 190, 71, 0.25);
+  filter: brightness(1) saturate(1);
+  transition:
+    box-shadow var(--motion-normal, 260ms) var(--ease-out, ease),
+    filter var(--motion-normal, 260ms) var(--ease-out, ease);
 }
-.logo span:last-child { font-size: 1.1rem; }
+.logo span:last-child {
+  font-size: 1.1rem;
+}
 
 .nav {
   display: flex;
@@ -114,15 +121,79 @@ button, input, select { font: inherit; }
   margin-left: auto;
 }
 .nav a {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   padding: 12px 14px;
   border-radius: 12px;
   color: var(--text-secondary);
-  transition: 0.25s ease;
+  transition: transform var(--motion-normal, 260ms) var(--ease-out, ease);
 }
-.nav a:hover,
+.nav a::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 7px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3));
+  box-shadow: 0 0 12px rgba(178, 77, 255, .5);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform var(--motion-normal, 260ms) var(--ease-out, ease);
+}
+.nav a::after {
+  content: "";
+  position: absolute;
+  top: -35%;
+  bottom: -35%;
+  left: -38%;
+  width: 28%;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent);
+  transform: translateX(-180%) skewX(-18deg);
+}
 .nav a.active {
   color: var(--text);
   background: rgba(255, 255, 255, 0.05);
+}
+.nav a.active::before,
+.nav a:focus-visible::before {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+.nav a:focus-visible,
+.logo:focus-visible {
+  outline: 2px solid rgba(255, 191, 71, .82);
+  outline-offset: 2px;
+}
+
+@keyframes nav-light-sweep {
+  0% { opacity: 0; transform: translateX(-180%) skewX(-18deg); }
+  24% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(720%) skewX(-18deg); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .logo:hover .logo-badge {
+    filter: brightness(1.1) saturate(1.12);
+    box-shadow:
+      0 12px 34px rgba(255, 190, 71, 0.34),
+      0 0 18px rgba(255, 190, 71, 0.2);
+  }
+  .nav a:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, .065);
+    transform: translateY(-2px);
+  }
+  .nav a:hover::before {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+  .nav a:hover::after { animation: nav-light-sweep .64s var(--ease-out, ease) both; }
 }
 
 .sr-only {

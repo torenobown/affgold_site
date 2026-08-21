@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadProjects } from './lib/projects.mjs';
+import { loadProjects, publishedProjects } from './lib/projects.mjs';
 
 const SCRIPT_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(SCRIPT_FILE), '..');
 const BASE_PATH = '/affgold_site';
+const PRODUCTION_ORIGIN = 'https://affgoldprod.com';
 const IGNORED_DIRECTORIES = new Set(['.git', 'node_modules', 'beget-upload']);
 const PUBLISHABLE_EXTENSIONS = new Set(['.html', '.css', '.js', '.mjs', '.xml']);
 const LEGACY_SCAN_EXCLUSIONS = new Set([
@@ -81,6 +82,72 @@ const decodeHtmlAttribute = (value) => value
   .replace(/&#x([0-9a-f]+);/gi, (match, code) => {
     try { return String.fromCodePoint(Number.parseInt(code, 16)); } catch { return match; }
   });
+
+const decodeHtmlText = (value = '') => decodeHtmlAttribute(String(value))
+  .replaceAll('&nbsp;', ' ')
+  .replaceAll('&lt;', '<')
+  .replaceAll('&gt;', '>')
+  .replaceAll('&#x27;', "'");
+
+const stripMarkup = (value = '') => decodeHtmlText(String(value)
+  .replace(/<(?:script|style|svg|template)\b[\s\S]*?<\/(?:script|style|svg|template)>/gi, ' ')
+  .replace(/<[^>]+>/g, ' '))
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const tagText = (html, tagName) => stripMarkup(
+  html.match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i'))?.[1] || ''
+);
+
+const metaContent = (html, attribute, value) => {
+  const pattern = /<meta\b[^>]*>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const tag = match[0];
+    if ((attributeValue(tag, attribute) || '').toLowerCase() === value.toLowerCase()) {
+      return decodeHtmlAttribute(attributeValue(tag, 'content') || '');
+    }
+  }
+  return '';
+};
+
+const linkHref = (html, relation) => {
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = match[0];
+    const relations = (attributeValue(tag, 'rel') || '').toLowerCase().split(/\s+/);
+    if (relations.includes(relation.toLowerCase())) return decodeHtmlAttribute(attributeValue(tag, 'href') || '');
+  }
+  return '';
+};
+
+const isNoindex = (html) => metaContent(html, 'name', 'robots').toLowerCase().split(/[\s,]+/).includes('noindex');
+
+const expectedCanonical = (root, file) => {
+  const relative = relativeName(root, file);
+  let route;
+  if (relative === 'index.html') route = '/';
+  else if (relative.endsWith('/index.html')) route = `/${relative.slice(0, -'index.html'.length)}`;
+  else route = `/${relative}`;
+  return new URL(route, PRODUCTION_ORIGIN).href;
+};
+
+const extractJsonLd = (html) => {
+  const values = [];
+  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const tag = `<script${match[1]}>`;
+    if ((attributeValue(tag, 'type') || '').toLowerCase() !== 'application/ld+json') continue;
+    values.push(match[2].trim());
+  }
+  return values;
+};
+
+const schemaNodes = (value) => {
+  if (Array.isArray(value)) return value.flatMap(schemaNodes);
+  if (!value || typeof value !== 'object') return [];
+  if (Array.isArray(value['@graph'])) return [value, ...value['@graph'].flatMap(schemaNodes)];
+  return [value];
+};
+
+const countWords = (value) => (stripMarkup(value).match(/[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu) || []).length;
 
 const extractIds = (html) => {
   const ids = [];
@@ -199,10 +266,19 @@ export function checkSite(root = DEFAULT_ROOT) {
     checks.push({ name, status: ownErrors.length ? 'failed' : 'passed', details, errors: ownErrors });
   };
 
+  let allProjects = null;
   let projects = null;
-  run('База проектов', () => {
-    projects = loadProjects(rootPath);
-    return `${projects.length} проектов, данные валидны`;
+  run('База проектов', (fail) => {
+    allProjects = loadProjects(rootPath);
+    projects = publishedProjects(allProjects);
+    projects.forEach((project) => {
+      if (project.status !== 'published') fail(`${project.id}: status должен быть указан явно как published.`);
+      if (!project.publishedAt || !project.reviewerId) fail(`${project.id}: отсутствует дата публикации или ответственный редактор.`);
+      if (!Array.isArray(project.sources) || project.sources.length === 0) fail(`${project.id}: опубликованный проект должен содержать источник.`);
+      if (!Array.isArray(project.changelog) || project.changelog.length === 0) fail(`${project.id}: опубликованный проект должен содержать журнал изменений.`);
+      if (project.verifiedAt && project.sources.some((source) => !source.checkedAt)) fail(`${project.id}: при verifiedAt у каждого источника нужна дата checkedAt.`);
+    });
+    return `${allProjects.length} всего, ${projects.length} опубликовано, данные валидны`;
   });
 
   let htmlFiles = [];
@@ -231,6 +307,72 @@ export function checkSite(root = DEFAULT_ROOT) {
     return `${htmlFiles.length} файлов, ${idCount} id`;
   });
 
+  let indexableHtmlFiles = [];
+  const indexableCanonicals = new Set();
+  run('SEO metadata и schema.org', (fail) => {
+    const canonicalOwners = new Map();
+    let schemaCount = 0;
+    htmlFiles.forEach((file) => {
+      const html = htmlSources.get(file);
+      const name = relativeName(rootPath, file);
+      if (isNoindex(html)) return;
+      indexableHtmlFiles.push(file);
+
+      if (!/<html\b[^>]*\blang=["']ru["']/i.test(html)) fail(`${name}: ожидается <html lang="ru">.`);
+      const title = tagText(html, 'title');
+      const description = metaContent(html, 'name', 'description').trim();
+      const h1Count = [...html.matchAll(/<h1\b[^>]*>/gi)].length;
+      if (title.length < 15 || title.length > 100) fail(`${name}: длина title ${title.length}, ожидается 15–100 символов.`);
+      if (description.length < 70 || description.length > 240) fail(`${name}: длина description ${description.length}, ожидается 70–240 символов.`);
+      if (h1Count !== 1) fail(`${name}: найдено H1: ${h1Count}, ожидается ровно 1.`);
+
+      const canonical = linkHref(html, 'canonical');
+      const expected = expectedCanonical(rootPath, file);
+      if (canonical !== expected) fail(`${name}: canonical «${canonical || '(нет)'}», ожидается «${expected}».`);
+      if (canonical) {
+        if (canonicalOwners.has(canonical)) fail(`${name}: canonical повторяет ${canonicalOwners.get(canonical)}.`);
+        else canonicalOwners.set(canonical, name);
+        indexableCanonicals.add(canonical);
+      }
+
+      const socialFields = [
+        ['property', 'og:type'], ['property', 'og:title'], ['property', 'og:description'],
+        ['property', 'og:url'], ['property', 'og:image'], ['name', 'twitter:card'],
+        ['name', 'twitter:title'], ['name', 'twitter:description'], ['name', 'twitter:image']
+      ];
+      socialFields.forEach(([attribute, key]) => {
+        if (!metaContent(html, attribute, key).trim()) fail(`${name}: отсутствует ${key}.`);
+      });
+      const ogUrl = metaContent(html, 'property', 'og:url').trim();
+      if (canonical && ogUrl !== canonical) fail(`${name}: og:url должен совпадать с canonical.`);
+      const ogImage = metaContent(html, 'property', 'og:image').trim();
+      if (ogImage) {
+        try {
+          const imageUrl = new URL(ogImage, expected);
+          if (imageUrl.origin !== PRODUCTION_ORIGIN) fail(`${name}: og:image должен находиться на ${PRODUCTION_ORIGIN}.`);
+          else {
+            const imageFile = path.resolve(rootPath, imageUrl.pathname.replace(/^\/+/, ''));
+            if (!isInside(rootPath, imageFile) || !fs.existsSync(imageFile) || !fs.statSync(imageFile).isFile()) {
+              fail(`${name}: локальный файл og:image не найден.`);
+            }
+          }
+        } catch { fail(`${name}: некорректный og:image.`); }
+      }
+
+      const jsonLdBlocks = extractJsonLd(html);
+      if (!jsonLdBlocks.length) fail(`${name}: отсутствует JSON-LD.`);
+      jsonLdBlocks.forEach((source, index) => {
+        try {
+          JSON.parse(source);
+          schemaCount += 1;
+        } catch (error) {
+          fail(`${name}: JSON-LD #${index + 1} не разбирается (${error.message}).`);
+        }
+      });
+    });
+    return `${indexableHtmlFiles.length} индексируемых страниц, ${schemaCount} JSON-LD блоков`;
+  }, htmlFiles.length > 0);
+
   run('Страницы обзоров', (fail) => {
     projects.forEach((project) => {
       const review = path.join(rootPath, 'reviews', project.slug, 'index.html');
@@ -240,6 +382,73 @@ export function checkSite(root = DEFAULT_ROOT) {
     });
     return `${projects.length} из ${projects.length} обзоров найдены`;
   }, Boolean(projects));
+
+  run('Источники и Article schema обзоров', (fail) => {
+    projects.forEach((project) => {
+      const relative = `reviews/${project.slug}/index.html`;
+      const file = path.join(rootPath, ...relative.split('/'));
+      if (!fs.existsSync(file)) return;
+      const html = htmlSources.get(file) || fs.readFileSync(file, 'utf8');
+      if (html.includes('class="review-hero-card__source"')) fail(`${relative}: снова показан блок служебных дат или авторства.`);
+      if (!html.includes('id="sources"')) fail(`${relative}: отсутствует видимый раздел источников.`);
+      const visibleText = stripMarkup(html);
+      if (Array.isArray(project.sources)) project.sources.forEach((source) => {
+        if (!visibleText.includes(source.label)) fail(`${relative}: источник «${source.label}» отсутствует в видимом тексте.`);
+      });
+
+      const parsedSchemas = [];
+      extractJsonLd(html).forEach((source, index) => {
+        try { parsedSchemas.push(...schemaNodes(JSON.parse(source))); }
+        catch { /* Parse error is reported by the general SEO check. */ }
+      });
+      const article = parsedSchemas.find((node) => {
+        const types = Array.isArray(node?.['@type']) ? node['@type'] : [node?.['@type']];
+        return types.includes('Article');
+      });
+      if (!article) {
+        fail(`${relative}: отсутствует Article schema.`);
+        return;
+      }
+      if (!article.headline || !article.image) fail(`${relative}: Article schema не содержит headline или image.`);
+      if (!article.publisher?.logo || !article.mainEntityOfPage) fail(`${relative}: Article schema не содержит publisher logo или mainEntityOfPage.`);
+      if ('author' in article || 'datePublished' in article || 'dateModified' in article) fail(`${relative}: Article schema снова содержит служебные поля author/datePublished/dateModified.`);
+    });
+    return `${projects.length} обзоров с источниками и Article schema без дат и авторства`;
+  }, Boolean(projects));
+
+  run('Sitemap и robots.txt', (fail) => {
+    const sitemapFile = path.join(rootPath, 'sitemap.xml');
+    const robotsFile = path.join(rootPath, 'robots.txt');
+    if (!fs.existsSync(sitemapFile) || !fs.existsSync(robotsFile)) {
+      fail('Отсутствует sitemap.xml или robots.txt.');
+      return '';
+    }
+    const sitemap = fs.readFileSync(sitemapFile, 'utf8');
+    const entries = [...sitemap.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<\/url>/g)]
+      .map((match) => ({ url: decodeHtmlAttribute(match[1].trim()) }));
+    const urls = new Set();
+    entries.forEach((entry) => {
+      if (urls.has(entry.url)) fail(`sitemap.xml: повтор URL ${entry.url}.`);
+      urls.add(entry.url);
+      try {
+        const parsed = new URL(entry.url);
+        if (parsed.origin !== PRODUCTION_ORIGIN || parsed.search || parsed.hash) fail(`sitemap.xml: некорректный URL ${entry.url}.`);
+      } catch { fail(`sitemap.xml: URL не разбирается ${entry.url}.`); }
+    });
+    if (/<lastmod\b/i.test(sitemap)) fail('sitemap.xml: служебные даты lastmod не должны публиковаться.');
+    indexableCanonicals.forEach((canonical) => {
+      if (!urls.has(canonical)) fail(`sitemap.xml: отсутствует индексируемый canonical ${canonical}.`);
+    });
+    urls.forEach((url) => {
+      if (!indexableCanonicals.has(url)) fail(`sitemap.xml: URL не соответствует индексируемой HTML-странице ${url}.`);
+    });
+
+    const robots = fs.readFileSync(robotsFile, 'utf8');
+    if (!/^User-agent:\s*\*$/mi.test(robots)) fail('robots.txt: нет группы User-agent: *.');
+    if (!robots.includes(`Sitemap: ${PRODUCTION_ORIGIN}/sitemap.xml`)) fail('robots.txt: нет production Sitemap URL.');
+    if (!/^Clean-param:\s*q&payout&types&sort\s+\/catalog\.html$/mi.test(robots)) fail('robots.txt: не закреплён Clean-param фильтров каталога.');
+    return `${entries.length} URL, карта равна набору indexable canonical`;
+  }, indexableHtmlFiles.length > 0);
 
   run('Локальные href/src/srcset', (fail) => {
     let referenceCount = 0;
@@ -273,6 +482,112 @@ export function checkSite(root = DEFAULT_ROOT) {
     });
     return `${referenceCount} локальных ссылок проверено`;
   }, htmlFiles.length > 0);
+
+  run('Публичный контент и внешние ссылки', (fail) => {
+    const offerUrls = new Set(projects.map((project) => project.url));
+    const forbiddenVisibleCopy = [
+      ['упоминание партнёрской ссылки', /партн[её]рск/iu],
+      ['affiliate', /\baffiliate\b/iu],
+      ['маркировка 18+', /18\s*\+/u],
+      ['упоминание азартных игр', /азарт/iu],
+      ['предупреждение о финансовых потерях', /финансов\w*\s+потер/iu],
+      ['упоминание зависимости', /зависимост/iu],
+      ['формулировка «ответственная игра»', /ответственн\w*\s+игр/iu],
+      ['возрастное ограничение', /(?:совершеннолет|возрастн\w*\s+огранич)/iu],
+      ['служебная отметка изменения', /(?:редакт|обновл)/iu],
+      ['служебная отметка авторства', /\bавтор(?:а|ов|ство|ства|ом|ы)?\b/iu],
+      ['служебная дата или статус', /(?:дата\s+(?:публикации|проверки|изменения)|(?:опубликовано|проверено)\s+\d{2}\.\d{2}\.\d{4})/iu]
+    ];
+    const forbiddenMetadata = [
+      ['link rel=author', /<link\b[^>]*\brel=["'][^"']*\bauthor\b/iu],
+      ['author/datePublished/dateModified в JSON-LD', /"(?:author|datePublished|dateModified)"\s*:/u],
+      ['article published/modified meta', /<meta\b[^>]*\bproperty=["']article:(?:published|modified)_time["']/iu],
+      ['блок дат и авторства обзора', /review-hero-card__source/u]
+    ];
+    let offerLinks = 0;
+    let blankLinks = 0;
+    indexableHtmlFiles.forEach((file) => {
+      const html = htmlSources.get(file);
+      const name = relativeName(rootPath, file);
+      const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] || '';
+      const words = countWords(main);
+      if (words < 100) fail(`${name}: в main только ${words} слов, минимум 100.`);
+      for (const match of html.matchAll(/<a\b[^>]*>/gi)) {
+        const tag = match[0];
+        const href = decodeHtmlAttribute(attributeValue(tag, 'href') || '');
+        const target = (attributeValue(tag, 'target') || '').toLowerCase();
+        const rel = new Set((attributeValue(tag, 'rel') || '').toLowerCase().split(/\s+/).filter(Boolean));
+        if (target === '_blank') {
+          blankLinks += 1;
+          if (!rel.has('noopener')) fail(`${name}: target="_blank" без rel="noopener" у ${href || '(без href)'}.`);
+          if (!rel.has('noreferrer')) fail(`${name}: target="_blank" без rel="noreferrer" у ${href || '(без href)'}.`);
+        }
+        if (offerUrls.has(href)) {
+          offerLinks += 1;
+          ['sponsored', 'nofollow', 'noopener', 'noreferrer'].forEach((token) => {
+            if (!rel.has(token)) fail(`${name}: внешняя ссылка предложения ${href} не содержит rel="${token}".`);
+          });
+        }
+      }
+    });
+
+    htmlFiles.forEach((file) => {
+      const name = relativeName(rootPath, file);
+      if (name === 'admin/index.html' || name.startsWith('admin/')) return;
+      const html = htmlSources.get(file);
+      const visible = stripMarkup(html);
+      forbiddenVisibleCopy.forEach(([label, pattern]) => {
+        if (pattern.test(visible)) fail(`${name}: найдено запрещённое публичное ${label}.`);
+      });
+      forbiddenMetadata.forEach(([label, pattern]) => {
+        if (pattern.test(html)) fail(`${name}: найдено запрещённое публичное поле ${label}.`);
+      });
+    });
+
+    ['/about/affiliate-disclosure/', '/about/responsible-play/'].forEach((route) => {
+      const routeFile = path.join(rootPath, route.replace(/^\/+/, ''), 'index.html');
+      if (fs.existsSync(routeFile)) fail(`${relativeName(rootPath, routeFile)}: удалённая публичная страница снова создана.`);
+    });
+
+    const contentFiles = [
+      ...htmlFiles,
+      path.join(rootPath, 'js', 'projects-data.js'),
+      path.join(rootPath, 'content', 'site.json'),
+      path.join(rootPath, 'content', 'seo-pages.json')
+    ].filter((file) => fs.existsSync(file));
+    const forbidden = [/Здесь можно указать/iu, /lorem ipsum/iu, /Более 2000 игровых автоматов/iu, /Лицензия Кюрасао/iu];
+    contentFiles.forEach((file) => {
+      const source = fs.readFileSync(file, 'utf8');
+      forbidden.forEach((pattern) => {
+        if (pattern.test(source)) fail(`${relativeName(rootPath, file)}: найден placeholder или неподтверждённое абсолютное утверждение «${pattern.source}».`);
+      });
+    });
+    if (!offerLinks) fail('Не найдено ни одной внешней ссылки предложения для проверки rel.');
+    return `${offerLinks} ссылок предложений, ${blankLinks} target=_blank, запрещённых публичных пометок нет`;
+  }, Boolean(projects) && indexableHtmlFiles.length > 0);
+
+  run('404 для глубоких URL', (fail) => {
+    const file = path.join(rootPath, '404.html');
+    if (!fs.existsSync(file)) {
+      fail('404.html отсутствует.');
+      return '';
+    }
+    const html = fs.readFileSync(file, 'utf8');
+    if (!isNoindex(html)) fail('404.html должен содержать noindex.');
+    const pattern = /\b(href|src|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+    let references = 0;
+    for (const match of html.matchAll(pattern)) {
+      const attribute = match[1].toLowerCase();
+      const value = match[2] ?? match[3] ?? '';
+      localCandidates(attribute, value).forEach((candidate) => {
+        const decoded = decodeHtmlAttribute(candidate.trim());
+        if (!decoded || decoded.startsWith('#') || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(decoded)) return;
+        references += 1;
+        if (!decoded.startsWith('/')) fail(`404.html: локальная ссылка «${decoded}» должна быть root-absolute.`);
+      });
+    }
+    return `${references} локальных ссылок безопасны при ErrorDocument на глубоком пути`;
+  });
 
   run('Изображения project-card', (fail) => {
     let cardCount = 0;
@@ -363,6 +678,42 @@ export function checkSite(root = DEFAULT_ROOT) {
     return `${projects.length} тем в ${THEME_STYLESHEETS.length} CSS-файлах`;
   }, Boolean(projects));
 
+  run('Стабильная геометрия hover главного экрана', (fail) => {
+    const homeFile = path.join(rootPath, 'index.html');
+    const homeCssFile = path.join(rootPath, 'css', 'home.css');
+    const baseCssFile = path.join(rootPath, 'css', 'base.css');
+    const bundleFile = path.join(rootPath, 'css', 'home-page.css');
+    if (![homeFile, homeCssFile, baseCssFile, bundleFile].every((file) => fs.existsSync(file))) {
+      fail('Для проверки нужны index.html, css/home.css, css/base.css и css/home-page.css.');
+      return '';
+    }
+
+    const html = htmlSources.get(homeFile) || fs.readFileSync(homeFile, 'utf8');
+    const homeCss = fs.readFileSync(homeCssFile, 'utf8');
+    const baseCss = fs.readFileSync(baseCssFile, 'utf8');
+    const bundleCss = fs.readFileSync(bundleFile, 'utf8');
+    if (!/class=["'][^"']*\bhero-panel\b[^"']*\bfloating\b/iu.test(html)) {
+      fail('index.html: у hero-panel отсутствует фоновая floating-анимация.');
+    }
+    if (/\.hero-panel:hover\s*\{[^}]*(?:animation-play-state|\btransform|\btranslate|\bscale)\s*:/isu.test(homeCss)) {
+      fail('css/home.css: hover hero-panel меняет геометрию или состояние фоновой анимации.');
+    }
+    if (/\.hero-panel:hover\s+img\s*\{[^}]*(?:\btransform|\btranslate|\bscale)\s*:/isu.test(homeCss)) {
+      fail('css/home.css: hover изображения баннера меняет его геометрию.');
+    }
+    if (/\.logo:hover\s+\.logo-badge\s*\{[^}]*(?:\btransform|\btranslate|\bscale)\s*:/isu.test(baseCss)) {
+      fail('css/base.css: hover логотипа снова смещает или масштабирует badge.');
+    }
+    if (!/\.floating\s*\{[^}]*animation\s*:\s*floatY\s+5s\s+ease-in-out\s+infinite/isu.test(bundleCss)
+      || !/@keyframes\s+floatY\s*\{/iu.test(bundleCss)) {
+      fail('css/home-page.css: безопасная непрерывная floating-анимация баннера не собрана.');
+    }
+    if (/\.hero-panel:hover\s*\{[^}]*animation-play-state\s*:/isu.test(homeCss)) {
+      fail('css/home.css: hover баннера снова останавливает floating-анимацию и создаёт поздний возврат.');
+    }
+    return 'баннер движется непрерывно, hover не останавливает его и не меняет геометрию';
+  });
+
   run('Managed-карточки home/catalog', (fail) => {
     const ranked = [...projects].sort((left, right) => right.rating - left.rating || left.name.localeCompare(right.name, 'ru'));
     const specifications = [
@@ -390,6 +741,31 @@ export function checkSite(root = DEFAULT_ROOT) {
     });
     return `home: ${Math.min(4, projects.length)}, catalog: ${projects.length}`;
   }, Boolean(projects));
+
+  run('Контракт фильтров каталога', (fail) => {
+    const catalogFile = path.join(rootPath, 'catalog.html');
+    const scriptFile = path.join(rootPath, 'js', 'catalog.js');
+    const bundleFile = path.join(rootPath, 'css', 'catalog-page.css');
+    if (![catalogFile, scriptFile, bundleFile].every((file) => fs.existsSync(file))) {
+      fail('Для проверки нужны catalog.html, js/catalog.js и css/catalog-page.css.');
+      return '';
+    }
+
+    const html = htmlSources.get(catalogFile) || fs.readFileSync(catalogFile, 'utf8');
+    const cards = extractProjectCards(managedBlock(html, 'CATALOG_PROJECTS', fail, 'catalog.html'));
+    const requiredAttributes = ['data-project-id', 'data-project-name', 'data-project-search', 'data-payout', 'data-bonus-types', 'data-rating', 'data-wager'];
+    cards.forEach((card, index) => requiredAttributes.forEach((attribute) => {
+      if (attributeValue(card.openingTag, attribute) === undefined) fail(`catalog.html: у карточки ${index + 1} отсутствует ${attribute}.`);
+    }));
+
+    const script = fs.readFileSync(scriptFile, 'utf8');
+    const css = fs.readFileSync(bundleFile, 'utf8');
+    if (!script.includes('card.hidden =')) fail('js/catalog.js: фильтрация не управляет атрибутом hidden.');
+    if (!/\.project-card\[hidden\]\s*\{[^}]*display\s*:\s*none\s*!important/si.test(css)) {
+      fail('css/catalog-page.css: нет обязательного правила скрытия .project-card[hidden].');
+    }
+    return `${cards.length} карточек, hidden отображается корректно`;
+  });
 
   return {
     ok: errors.length === 0,

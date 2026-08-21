@@ -17,6 +17,14 @@
 .seo-lead { margin: 0; max-width: 760px; color: var(--text-secondary); font-size: 1.08rem; line-height: 1.75; }
 .seo-meta { display: flex; flex-wrap: wrap; gap: 9px 18px; margin-top: 20px; color: #8f97b5; font-size: .9rem; }
 .seo-meta span { display: inline-flex; align-items: center; gap: 7px; }
+.seo-meta a,
+.seo-notice a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,.3);
+  text-underline-offset: 3px;
+  transition: color .18s ease, text-decoration-color .18s ease;
+}
 .seo-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 24px; align-items: start; }
 .seo-main { display: grid; gap: 20px; }
 .seo-sidebar { position: sticky; top: calc(var(--header-h) + 18px); display: grid; gap: 16px; }
@@ -52,6 +60,8 @@
   .seo-card:hover { transform: translateY(-4px); border-color: rgba(178,77,255,.28); box-shadow: 0 24px 64px rgba(0,0,0,.4), 0 12px 28px rgba(123,60,255,.08); }
   .seo-toc a:hover { color: var(--text); }
   .seo-link-cloud a:hover { border-color: rgba(123,60,255,.32); color: #fff; }
+  .seo-meta a:hover,
+  .seo-notice a:hover { color: #fff; text-decoration-color: currentColor; }
 }
 .seo-card-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: rgba(123,60,255,.13); color: #dacfff; font-size: 1.15rem; }
 .seo-card h2, .seo-card h3 { margin: 2px 0 0; font-size: 1.08rem; }

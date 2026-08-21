@@ -10,10 +10,12 @@ import {
   databaseSource,
   parseProjectsSource,
   projectSignature,
+  validateProjectTransitions,
   validateProjects
 } from './lib/projects.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REAL_ROOT = fs.realpathSync(ROOT);
 const HOST = '127.0.0.1';
 const PORT = Number.parseInt(process.env.AFFGOLD_EDITOR_PORT || '4177', 10);
 const ORIGIN = `http://${HOST}:${PORT}`;
@@ -64,7 +66,11 @@ class HttpError extends Error {
 
 const responseHeaders = (extra = {}) => ({
   'Cache-Control': 'no-store',
+  'Content-Security-Policy': "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'",
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  'Permissions-Policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
   'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer',
   ...extra
 });
@@ -238,31 +244,39 @@ const editorStatus = async () => {
 
 const publishProjects = async (request, response) => {
   assertLocalRequest(request);
-  if (request.headers['x-affgold-admin-token'] !== API_TOKEN) throw new HttpError(403, 'Сессия локального редактора устарела. Обновите страницу.');
-  if (publishing) throw new HttpError(409, 'Сборка уже выполняется. Дождитесь её завершения.');
-  const payload = await readJson(request);
-  if (!payload || typeof payload !== 'object' || !Array.isArray(payload.projects)) throw new HttpError(400, 'В запросе отсутствует массив projects.');
-
-  const oldSource = await fsp.readFile(PROJECTS_FILE, 'utf8');
-  const currentProjects = parseProjectsSource(oldSource);
-  const currentSignature = projectSignature(currentProjects);
-  if (payload.sourceSignature !== currentSignature) {
-    throw new HttpError(409, 'Файл базы изменился после открытия редактора. Обновите страницу, чтобы не затереть свежие данные.');
+  if (request.headers['x-affgold-admin-token'] !== API_TOKEN) {
+    throw new HttpError(403, 'Сессия локального редактора устарела. Обновите страницу.');
   }
-
-  let projects;
-  let uploads;
-  try {
-    const prepared = prepareLogoUploads(payload.projects);
-    projects = validateProjects(prepared.projects);
-    uploads = prepared.uploads;
+  if (publishing) {
+    throw new HttpError(409, 'Сборка уже выполняется. Дождитесь её завершения.');
   }
-  catch (event) { throw new HttpError(422, event.message); }
-  const nextSource = databaseSource(projects);
-
   publishing = true;
-  let logoBackups = [];
   try {
+    const payload = await readJson(request);
+    if (!payload || typeof payload !== 'object' || !Array.isArray(payload.projects)) {
+      throw new HttpError(400, 'В запросе отсутствует массив projects.');
+    }
+
+    const oldSource = await fsp.readFile(PROJECTS_FILE, 'utf8');
+    const currentProjects = parseProjectsSource(oldSource);
+    const currentSignature = projectSignature(currentProjects);
+    if (payload.sourceSignature !== currentSignature) {
+      throw new HttpError(409, 'Файл базы изменился после открытия редактора. Обновите страницу, чтобы не затереть свежие данные.');
+    }
+
+    let projects;
+    let uploads;
+    try {
+      const prepared = prepareLogoUploads(payload.projects);
+      projects = validateProjects(prepared.projects);
+      validateProjectTransitions(currentProjects, projects);
+      uploads = prepared.uploads;
+    } catch (event) {
+      throw new HttpError(422, event.message);
+    }
+
+    const nextSource = databaseSource(projects);
+    let logoBackups = [];
     try {
       logoBackups = await writeLogoUploads(uploads);
       await atomicWrite(PROJECTS_FILE, nextSource);
@@ -270,6 +284,7 @@ const publishProjects = async (request, response) => {
       await rollbackLogoUploads(logoBackups);
       throw new HttpError(500, `Не удалось безопасно записать данные: ${writeError.message}`);
     }
+
     let buildOutput;
     try {
       buildOutput = await runBuild();
@@ -281,10 +296,16 @@ const publishProjects = async (request, response) => {
       try {
         recovery = await runBuild();
         recovery = [recovery, runSiteCheck()].filter(Boolean).join('\n');
+      } catch (recoveryError) {
+        recovery = `Восстановительная сборка также завершилась ошибкой: ${recoveryError.message}`;
       }
-      catch (recoveryError) { recovery = `Восстановительная сборка также завершилась ошибкой: ${recoveryError.message}`; }
-      throw new HttpError(500, 'Сборка не завершена. Исходная база проектов восстановлена.', `${buildError.message}\n${recovery}`.trim());
+      throw new HttpError(
+        500,
+        'Сборка не завершена. Исходная база проектов восстановлена.',
+        `${buildError.message}\n${recovery}`.trim()
+      );
     }
+
     lastPublishedAt = new Date().toISOString();
     sendJson(response, 200, {
       ok: true,
@@ -307,6 +328,9 @@ const resolveStaticFile = async (requestUrl) => {
   let pathname;
   try { pathname = decodeURIComponent(new URL(requestUrl, ORIGIN).pathname); }
   catch { throw new HttpError(400, 'Некорректный адрес.'); }
+  if (pathname.includes('\\') || pathname.includes('\0')) {
+    throw new HttpError(400, 'Некорректный адрес.');
+  }
   if (previewBasePath && (pathname === previewBasePath || pathname.startsWith(`${previewBasePath}/`))) {
     pathname = pathname.slice(previewBasePath.length) || '/';
   }
@@ -326,7 +350,19 @@ const resolveStaticFile = async (requestUrl) => {
     catch { throw new HttpError(404, 'Файл не найден.'); }
   }
   if (!stat.isFile()) throw new HttpError(404, 'Файл не найден.');
-  return { target, stat };
+  let realTarget;
+  try { realTarget = await fsp.realpath(target); }
+  catch { throw new HttpError(404, 'Файл не найден.'); }
+  const realRelative = path.relative(REAL_ROOT, realTarget);
+  if (realRelative === '..' || realRelative.startsWith(`..${path.sep}`) || path.isAbsolute(realRelative)) {
+    throw new HttpError(403, 'Доступ к этому пути запрещён.');
+  }
+  const realPublicPath = realRelative.split(path.sep).join('/');
+  const realFirstSegment = realPublicPath.split('/')[0];
+  if (!PUBLIC_ROOT_FILES.has(realPublicPath) && !PUBLIC_DIRECTORIES.has(realFirstSegment)) {
+    throw new HttpError(403, 'Доступ к этому пути запрещён.');
+  }
+  return { target: realTarget, stat };
 };
 
 const serveStatic = async (request, response) => {
@@ -355,6 +391,10 @@ const server = http.createServer(async (request, response) => {
     if (!['GET', 'HEAD'].includes(request.method)) throw new HttpError(405, 'Метод запроса не поддерживается.');
     await serveStatic(request, response);
   } catch (event) {
+    if (request.aborted || event?.code === 'ECONNRESET') {
+      response.destroy();
+      return;
+    }
     if (response.headersSent) {
       response.destroy();
       return;
@@ -367,6 +407,9 @@ const server = http.createServer(async (request, response) => {
     if (status >= 500) console.error(event);
   }
 });
+server.headersTimeout = 10_000;
+server.requestTimeout = 30_000;
+server.keepAliveTimeout = 5_000;
 
 export { server };
 

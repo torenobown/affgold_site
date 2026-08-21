@@ -26,7 +26,6 @@
       trigger.setAttribute('aria-haspopup', 'listbox');
       trigger.setAttribute('aria-expanded', 'false');
       trigger.setAttribute('aria-controls', listboxId);
-      if (accessibleName) trigger.setAttribute('aria-label', accessibleName);
       menu.className = 'custom-select-menu';
       menu.id = listboxId;
       menu.setAttribute('role', 'listbox');
@@ -56,6 +55,7 @@
         const label = document.createElement('span');
         const icon = document.createElement('i');
         label.textContent = selected?.textContent || '';
+        if (accessibleName) trigger.setAttribute('aria-label', `${accessibleName}: ${label.textContent}`);
         icon.setAttribute('aria-hidden', 'true');
         trigger.append(label, icon);
         items.forEach((item) => {
@@ -172,7 +172,11 @@
     Object.entries(state).forEach(([key, value]) => value && value !== 'rating-desc'
       ? url.searchParams.set(key, value)
       : url.searchParams.delete(key));
-    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    // file:// запрещает replaceState для локального файла; сами фильтры при этом
+    // должны продолжать работать без попытки записать параметры в адрес.
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    }
   };
 
   const resetFilters = () => {
@@ -205,9 +209,9 @@
       filterPanel.setAttribute('aria-modal', 'true');
       filterPanel.setAttribute('aria-label', 'Фильтры каталога');
     } else {
-      filterPanel.removeAttribute('role');
+      filterPanel.setAttribute('role', 'complementary');
       filterPanel.removeAttribute('aria-modal');
-      filterPanel.removeAttribute('aria-label');
+      filterPanel.setAttribute('aria-label', 'Фильтры каталога');
     }
     if (nextOpen) requestAnimationFrame(() => filterPanel.querySelector('[data-filter-close]')?.focus());
     else if (wasOpen) filterOpen?.focus();
@@ -223,13 +227,15 @@
     const focusable = [...filterPanel.querySelectorAll('input, select, button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
       .filter((element) => !element.inert && element.getAttribute('aria-hidden') !== 'true');
     const first = focusable[0];
-    const last = focusable.at(-1);
+    const last = focusable[focusable.length - 1];
     if (!first || !last) return;
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   });
   applyButton.addEventListener('click', () => setFiltersOpen(false));
-  compactFilters.addEventListener('change', () => setFiltersOpen(false));
+  const handleCompactChange = () => setFiltersOpen(false);
+  if (typeof compactFilters.addEventListener === 'function') compactFilters.addEventListener('change', handleCompactChange);
+  else compactFilters.addListener?.(handleCompactChange);
   setFiltersOpen(false);
 
   const initial = new URLSearchParams(window.location.search);

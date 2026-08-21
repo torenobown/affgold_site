@@ -7,27 +7,43 @@
 </head><body class="admin-page"><div class="site-shell">
   <header class="header"><div class="container header-inner"><a class="logo" href="../"><span class="logo-badge">♛</span><span>AFFGOLD</span></a><span class="admin-label">Редактор базы</span><a class="btn btn-secondary btn-sm" href="../catalog.html">Открыть сайт</a></div></header>
   <main class="admin-main"><div class="container">
-    <section class="admin-hero"><span class="seo-eyebrow">Без правки кода</span><h1>Управление проектами</h1><p>Добавляйте, дублируйте и изменяйте проекты через форму. Черновик сохраняется только для текущей версии базы и не затрёт более свежий файл.</p></section>
+    <section class="admin-hero"><span class="seo-eyebrow">Без правки кода</span><h1>Управление проектами</h1><p>Добавляйте проекты как черновики, прикладывайте источники и публикуйте только после проверки. Редактор защищает действующие адреса обзоров и не затрёт более свежий файл базы.</p></section>
     <div class="admin-editor-state" data-editor-state data-mode="checking" role="status"><span class="admin-editor-state__dot" aria-hidden="true"></span><div><strong data-editor-state-title>Проверяем локальный редактор…</strong><small data-editor-state-text>Подключаем безопасное сохранение и автоматическую сборку.</small></div></div>
-    <section class="card admin-guide"><h2>Как опубликовать изменения</h2><div data-local-guide hidden><ol><li>Отредактируйте проекты и проверьте заполненные оценки и цвета.</li><li>Нажмите <strong>«Сохранить и пересобрать»</strong>.</li><li>Дождитесь сообщения об успешной сборке — база и все статические страницы будут обновлены автоматически.</li></ol><p>Локальный редактор проверяет свежесть исходного файла и не публикует некорректные данные.</p></div><div data-static-guide><ol><li>Отредактируйте список и нажмите «Сохранить файл базы».</li><li>Выберите существующий файл <strong>js/projects-data.js</strong> и подтвердите замену.</li><li>Запустите <strong>rebuild-site.bat</strong> и дождитесь сообщения «Готово».</li></ol><p>На обычном статическом хостинге браузер не может записывать файлы проекта, поэтому остаются экспорт и скачивание.</p></div></section>
+    <section class="card admin-guide"><h2>Как опубликовать изменения</h2><div data-local-guide hidden><ol><li>Создайте черновик, заполните контент, автора проверки и источники.</li><li>После фактической проверки укажите её дату и выберите статус <strong>«Опубликован»</strong>.</li><li>Нажмите <strong>«Сохранить и пересобрать»</strong> и дождитесь успешной проверки сайта.</li></ol><p>Смена цвета не меняет дату проверки. Опубликованный проект вместо удаления переводится в архив.</p></div><div data-static-guide><ol><li>Отредактируйте список и нажмите «Сохранить файл базы».</li><li>Выберите существующий файл <strong>js/projects-data.js</strong> и подтвердите замену.</li><li>Запустите <strong>rebuild-site.bat</strong> и дождитесь сообщения «Готово».</li></ol><p>На обычном статическом хостинге браузер не может записывать файлы проекта, поэтому остаются экспорт и скачивание.</p></div></section>
     <div class="admin-toolbar card"><div><strong id="project-count">Проектов: 0</strong><span id="admin-status" aria-live="polite">Все изменения сохраняются как черновик</span></div><div class="admin-toolbar-actions"><button class="btn btn-secondary" type="button" data-add>+ Добавить проект</button><button class="btn btn-primary" type="button" data-publish disabled>Сохранить и пересобрать</button><button class="btn btn-secondary" type="button" data-save-file>Сохранить файл базы</button><button class="btn btn-secondary" type="button" data-download>Скачать файл</button><button class="admin-text-btn" type="button" data-reset>Сбросить черновик</button></div></div>
     <div id="admin-publish-error" class="admin-error admin-publish-error" role="alert" hidden></div>
     <div id="admin-projects" class="admin-projects"></div>
   </div></main>
 
-  <dialog id="project-dialog" class="admin-dialog"><form id="project-form" method="dialog">
+  <dialog id="project-dialog" class="admin-dialog" aria-labelledby="dialog-title"><form id="project-form" method="dialog">
     <div class="admin-dialog-head"><div><span class="seo-eyebrow">Карточка проекта</span><h2 id="dialog-title">Новый проект</h2></div><button class="admin-close" type="button" data-close aria-label="Закрыть">×</button></div>
     <input type="hidden" name="editIndex" value="-1">
     <div class="admin-form-grid">
+      <h3 class="admin-form-heading admin-wide">Публикация и проверка</h3>
+      <label><span>Статус *</span><select name="status" required><option value="draft">Черновик</option><option value="published">Опубликован</option><option value="archived">Архив</option></select><small>Черновик и архив не попадают на публичные страницы.</small></label>
+      <label><span>Ответственный редактор</span><input name="reviewerId" type="text" maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ivan-ivanov"><small>Постоянный ID автора или проверяющего латиницей.</small></label>
+      <label><span>Текст изменён</span><input name="lastUpdated" type="date" readonly required><small>Обновляется автоматически при изменении содержания, но не цветов.</small></label>
+      <label><span>Впервые опубликован</span><input name="publishedAt" type="date" readonly><small>Заполняется при первой публикации.</small></label>
+      <label><span>Факты проверены</span><input name="verifiedAt" type="date"><small>Меняйте только после повторной проверки условий и источников.</small></label>
+      <label><span>Оффер действует до</span><input name="offerExpiresAt" type="date"><small>Необязательно. Просроченную дату легко заметить до релиза.</small></label>
+      <h3 class="admin-form-heading admin-wide">Основные данные и адрес</h3>
       <label><span>Название *</span><input name="name" type="text" required placeholder="Например, NORM Casino"></label>
-      <label><span>ID латиницей *</span><input name="id" type="text" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="norm"></label>
-      <label><span>Адрес обзора *</span><input name="slug" type="text" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="norm-casino"></label>
+      <label><span>ID латиницей *</span><input name="id" type="text" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="norm"><small data-id-help>После публикации ID фиксируется навсегда.</small></label>
+      <label><span>Адрес обзора *</span><input name="slug" type="text" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="norm-casino"><small>Будет создан адрес /reviews/адрес-обзора/.</small></label>
       <label><span>Промокод *</span><input name="promoCode" type="text" required value="BETGOLDTEAM"></label>
+      <label class="admin-wide admin-seo-guard" data-seo-guard hidden><span>Защита SEO-адреса</span><span class="admin-checkbox"><input name="confirmAddressChange" type="checkbox"> Я понимаю, что меняю адрес опубликованной страницы</span><small>Старый адрес будет автоматически сохранён в списке серверных редиректов.</small></label>
       <label class="admin-wide"><span>Офферная ссылка *</span><input name="url" required type="url" placeholder="https://..."></label>
       <label class="admin-wide"><span>Логотип *</span><input name="logo" type="text" required placeholder="assets/images/logo.svg или загрузите файл ниже"></label>
       <label class="admin-wide"><span>Загрузить логотип</span><input name="logoFile" type="file" accept="image/png,image/jpeg,image/webp" disabled><small>PNG, JPEG или WebP до 128 КБ. Загрузка включается в локальном редакторе и сохраняет изображение отдельно от базы.</small></label>
+      <h3 class="admin-form-heading admin-wide">Юридические данные и источники</h3>
+      <label><span>Оператор</span><input name="operator" type="text" maxlength="500" placeholder="Юридическое лицо"></label>
+      <label><span>Лицензирующий орган</span><input name="licenseAuthority" type="text" maxlength="500" placeholder="Например, Curaçao Gaming Authority"></label>
+      <label><span>Номер лицензии</span><input name="licenseNumber" type="text" maxlength="500" placeholder="Номер или идентификатор"></label>
+      <label><span>Юрисдикции</span><input name="jurisdictions" type="text" placeholder="Кюрасао, международная"></label>
+      <label class="admin-wide"><span>Источники — по одному в строке</span><textarea name="sources" rows="4" placeholder="Официальные условия | https://example.com/terms | 2026-08-21"></textarea><small>Формат: название | HTTPS-ссылка | дата проверки YYYY-MM-DD. Символ | и перенос строки разделяют поля и записи.</small></label>
+      <label class="admin-wide"><span>Старые адреса для редиректов</span><textarea name="redirectAliases" rows="3" placeholder="/reviews/old-address/"></textarea><small>Один локальный путь в строке. При смене slug прежний адрес добавится автоматически.</small></label>
       <h3 class="admin-form-heading admin-wide">Рейтинг проекта</h3>
-      <label><span>Рейтинг *</span><input name="rating" type="number" min="0" max="5" step="0.1" value="4.5" required></label>
+      <label><span>Итоговый рейтинг</span><input name="rating" type="number" min="0" max="5" step="0.1" value="4.5" readonly><small>Среднее пяти оценок с одинаковым весом 20%.</small></label>
       <label><span>Вердикт *</span><input name="verdict" type="text" value="Хорошо" required></label>
       <label><span>Надёжность *</span><input name="scoreReliability" type="number" min="0" max="5" step="0.1" value="4.5" required></label>
       <label><span>Бонусы *</span><input name="scoreBonuses" type="number" min="0" max="5" step="0.1" value="4.5" required></label>
@@ -54,8 +70,11 @@
       <label class="admin-wide"><span>Текст о бонусах *</span><textarea name="tabBonuses" required rows="3"></textarea></label>
       <label class="admin-wide"><span>Текст об игровом каталоге *</span><textarea name="tabSlots" required rows="3"></textarea></label>
       <label class="admin-wide"><span>Текст о платежах *</span><textarea name="tabPayments" required rows="3"></textarea></label>
+      <h3 class="admin-form-heading admin-wide">История изменений</h3>
+      <label class="admin-wide"><span>Комментарий к этой правке</span><input name="changeNote" type="text" maxlength="500" placeholder="Например, перепроверены условия бонуса"></label>
+      <label class="admin-wide"><span>Журнал — по одной записи в строке</span><textarea name="changelog" rows="4" placeholder="2026-08-21 | Обновлены условия бонуса"></textarea><small>Формат: дата YYYY-MM-DD | краткое описание в одну строку. Новая запись добавится из поля выше.</small></label>
     </div>
-    <div id="form-error" class="admin-error" hidden></div>
+    <div id="form-error" class="admin-error" role="alert" aria-live="assertive" hidden></div>
     <div class="admin-dialog-actions"><button class="btn btn-secondary" type="button" data-close>Отмена</button><button class="btn btn-primary" type="submit">Сохранить проект</button></div>
   </form></dialog>
   <script src="../js/projects-data.js"></script><script src="../js/admin.js"></script>

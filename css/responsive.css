@@ -221,21 +221,15 @@
     transform: scale(0.985);
   }
 
+  .mobile-side-menu__nav a:focus-visible {
+    outline: 2px solid rgba(255, 191, 71, .82);
+    outline-offset: 2px;
+  }
+
   .mobile-side-menu__nav a.active {
     color: #fff;
     border-color: rgba(138, 83, 255, 0.34);
     background: linear-gradient(135deg, rgba(123, 60, 255, 0.16), rgba(178, 77, 255, 0.08));
-  }
-
-  .mobile-side-menu__note {
-    margin-top: auto;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.025);
-    color: var(--text-secondary);
-    font-size: 0.78rem;
-    line-height: 1.5;
   }
 
   body.mobile-menu-open {

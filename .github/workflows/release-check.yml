@@ -1,0 +1,39 @@
+name: Release check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use project Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build, validate and package
+        run: npm run release
+        env:
+          AFFGOLD_SITE_URL: https://affgoldprod.com
+
+      - name: Ensure generated sources are committed
+        run: git diff --exit-code -- . ':(exclude)beget-upload' ':(exclude)affgold-beget.zip'
+
+      - name: Upload validated Beget archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: affgold-beget
+          path: affgold-beget.zip
+          if-no-files-found: error
+          retention-days: 14

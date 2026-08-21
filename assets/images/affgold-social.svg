@@ -1,0 +1,58 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="84" y1="35" x2="1118" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17112E"/>
+      <stop offset="0.48" stop-color="#090D19"/>
+      <stop offset="1" stop-color="#111724"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="98" y1="88" x2="250" y2="252" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD86A"/>
+      <stop offset="1" stop-color="#FF922E"/>
+    </linearGradient>
+    <linearGradient id="word" x1="326" y1="236" x2="890" y2="344" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#FFF4D6"/>
+      <stop offset="1" stop-color="#FFC652"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientTransform="translate(186 156) rotate(34) scale(500 390)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8C3DFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#8C3DFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientTransform="translate(1026 511) rotate(-149) scale(442 316)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB23D" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#FFB23D" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="54" y="54" width="264" height="264" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glowA)"/>
+  <rect width="1200" height="630" fill="url(#glowB)"/>
+  <path d="M0 520C220 448 365 602 613 536C857 471 1018 386 1200 445V630H0V520Z" fill="#FFFFFF" fill-opacity="0.018"/>
+  <g opacity="0.18">
+    <path d="M858 0L548 630" stroke="#FFFFFF"/>
+    <path d="M935 0L625 630" stroke="#FFFFFF"/>
+    <path d="M1012 0L702 630" stroke="#FFFFFF"/>
+    <path d="M1089 0L779 630" stroke="#FFFFFF"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="82" y="82" width="208" height="208" rx="62" fill="url(#gold)"/>
+    <path d="M132 143L158 205H214L240 143" stroke="#241704" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M145 131L166 158L186 119L206 158L227 131" stroke="#241704" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M158 205V236H214V205" stroke="#241704" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="326" y="274" fill="url(#word)" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="112" font-weight="800" letter-spacing="1">AFFGOLD</text>
+  <text x="330" y="350" fill="#C8CEE3" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="500">Обзоры, рейтинги и полезные гайды</text>
+  <g transform="translate(330 406)">
+    <rect width="278" height="64" rx="32" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.1"/>
+    <circle cx="34" cy="32" r="7" fill="#FFD05A"/>
+    <text x="56" y="41" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="600">Бонусы и условия</text>
+  </g>
+  <g transform="translate(626 406)">
+    <rect width="284" height="64" rx="32" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.1"/>
+    <circle cx="34" cy="32" r="7" fill="#9D63FF"/>
+    <text x="56" y="41" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="600">Рейтинги проектов</text>
+  </g>
+  <text x="84" y="568" fill="#8F98B7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">affgoldprod.com · Обзоры и рейтинги</text>
+</svg>

@@ -62,11 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawerNav.append(clonedLink);
     });
 
-    const note = document.createElement('div');
-    note.className = 'mobile-side-menu__note';
-    note.textContent = '18+. Перед переходом проверяйте актуальные условия выбранного проекта.';
-
-    drawer.append(drawerHead, drawerNav, note);
+    drawer.append(drawerHead, drawerNav);
     document.body.append(backdrop, drawer);
 
     mobileMenuTrigger.setAttribute('role', 'button');

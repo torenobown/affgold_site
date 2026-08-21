@@ -29,6 +29,11 @@
   }
   .hero-panel,
   .hero-panel img,
+  .logo,
+  .logo-badge,
+  .logo > span:last-child,
+  .nav a,
+  .footer-links a,
   .project-card,
   .seo-card,
   .review-highlight-card,
@@ -36,6 +41,8 @@
   .promo-code,
   .mobile-side-menu__nav a:active {
     transform: none !important;
+    translate: none !important;
     scale: 1 !important;
   }
+  .nav a::after { display: none !important; }
 }
