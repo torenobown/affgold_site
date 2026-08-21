@@ -536,6 +536,10 @@ button, input, select { font: inherit; }
 }
 @media (max-width: 640px) {
   .project-grid { grid-template-columns: 1fr; }
+  .project-card__actions .btn {
+    height: 46px;
+    min-height: 46px;
+  }
 }
 @media (max-width: 360px) {
   .project-card__actions { flex-direction: column; }
