@@ -155,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
     'main .project-grid > *',
     'main .stats-grid > *',
     'main .seo-main > .card',
-    'main .seo-main > .seo-notice',
     'main .catalog-toolbar',
     'main .catalog-summary'
   ];

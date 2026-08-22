@@ -110,6 +110,7 @@ button, input, select { font: inherit; }
     box-shadow var(--motion-normal, 260ms) var(--ease-out, ease),
     filter var(--motion-normal, 260ms) var(--ease-out, ease);
 }
+.logo-badge svg { width: 32px; height: 32px; display: block; }
 .logo span:last-child {
   font-size: 1.1rem;
 }

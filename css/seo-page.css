@@ -111,6 +111,7 @@ button, input, select { font: inherit; }
     box-shadow var(--motion-normal, 260ms) var(--ease-out, ease),
     filter var(--motion-normal, 260ms) var(--ease-out, ease);
 }
+.logo-badge svg { width: 32px; height: 32px; display: block; }
 .logo span:last-child {
   font-size: 1.1rem;
 }
@@ -232,7 +233,11 @@ button, input, select { font: inherit; }
   color: var(--text);
 }
 
-.btn {
+.btn,
+button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -248,6 +253,26 @@ button, input, select { font: inherit; }
     box-shadow .2s ease,
     background .2s ease,
     border-color .2s ease;
+}
+
+.btn::before,
+button::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -45%;
+  z-index: -1;
+  width: 28%;
+  background: rgba(255, 255, 255, .24);
+  transform: skewX(-18deg) translateX(-180%);
+  transition: transform .55s ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover::before,
+  button:hover::before {
+    transform: skewX(-18deg) translateX(620%);
+  }
 }
 
 .btn-primary {
@@ -315,8 +340,19 @@ button, input, select { font: inherit; }
 }
 
 .link-more {
+  display: inline-flex;
+  align-items: center;
   color: #d8ccff;
   font-weight: 700;
+  transition: color .45s ease, transform .6s cubic-bezier(.22,.61,.36,1), text-shadow .45s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link-more:hover {
+    color: #fff;
+    transform: translateX(6px);
+    text-shadow: 0 0 16px rgba(178,77,255,.5);
+  }
 }
 
 .bonus-grid,
@@ -682,6 +718,23 @@ button, input, select { font: inherit; }
 .seo-main { display: grid; gap: 20px; }
 .seo-sidebar { position: sticky; top: calc(var(--header-h) + 18px); display: grid; gap: 16px; }
 .seo-panel { padding: clamp(20px, 3vw, 32px); }
+.contact-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.contact-btn-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: .78rem;
+  line-height: 1;
+  transition: transform .25s ease, background .25s ease;
+}
+.contact-actions .btn:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .contact-actions .btn:hover { transform: translateY(-3px); }
+  .contact-actions .btn:hover .contact-btn-icon { transform: rotate(12deg) scale(1.12); background: rgba(255,255,255,.14); }
+}
 .seo-panel h2 { margin: 0 0 14px; font-size: clamp(1.35rem, 2.4vw, 2rem); }
 .seo-panel h3 { margin: 22px 0 10px; }
 .seo-panel p, .seo-panel li { color: var(--text-secondary); line-height: 1.75; }
@@ -709,22 +762,49 @@ button, input, select { font: inherit; }
     box-shadow .26s ease;
 }
 .seo-card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(145deg, rgba(123,60,255,.1), transparent 45%); pointer-events: none; }
+.seo-card::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -35%;
+  width: 24%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+  transform: translateX(-180%) skewX(-18deg);
+  pointer-events: none;
+}
 @media (hover: hover) {
-  .seo-card:hover { transform: translateY(-4px); border-color: rgba(178,77,255,.28); box-shadow: 0 24px 64px rgba(0,0,0,.4), 0 12px 28px rgba(123,60,255,.08); }
+  .seo-card:hover { transform: translateY(-7px) scale(1.012); border-color: rgba(178,77,255,.52); box-shadow: 0 28px 70px rgba(0,0,0,.46), 0 0 28px rgba(123,60,255,.2); }
+  .seo-card:hover::after { animation: seo-card-sweep .72s ease both; }
+  .seo-card:hover .seo-card-icon { transform: translateY(-3px) rotate(-6deg) scale(1.08); box-shadow: 0 8px 24px rgba(123,60,255,.28); }
+  .seo-card:hover .seo-card-link { transform: translateX(7px); color: #fff; text-shadow: 0 0 16px rgba(178,77,255,.5); }
   .seo-toc a:hover { color: var(--text); }
   .seo-link-cloud a:hover { border-color: rgba(123,60,255,.32); color: #fff; }
   .seo-meta a:hover,
   .seo-notice a:hover { color: #fff; text-decoration-color: currentColor; }
 }
+@keyframes seo-card-sweep {
+  from { transform: translateX(-180%) skewX(-18deg); }
+  to { transform: translateX(720%) skewX(-18deg); }
+}
 .seo-card-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: rgba(123,60,255,.13); color: #dacfff; font-size: 1.15rem; }
 .seo-card h2, .seo-card h3 { margin: 2px 0 0; font-size: 1.08rem; }
 .seo-card p { margin: 0; color: var(--text-secondary); line-height: 1.55; font-size: .92rem; }
-.seo-card-link { margin-top: auto; color: #d9ceff; font-size: .9rem; font-weight: 800; }
+.seo-card-icon, .seo-card-link { transition: transform .6s cubic-bezier(.22,.61,.36,1), box-shadow .45s ease, color .45s ease, text-shadow .45s ease; }
+.seo-card-link { display: inline-flex; align-items: center; margin-top: auto; color: #d9ceff; font-size: .9rem; font-weight: 800; transition: transform .6s cubic-bezier(.22,.61,.36,1), color .45s ease, text-shadow .45s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .seo-card-link:hover { transform: translateX(6px); color: #fff; text-shadow: 0 0 16px rgba(178,77,255,.5); }
+}
 .seo-notice { padding: 17px 19px; border: 1px solid rgba(255,191,71,.2); border-radius: 16px; background: rgba(255,191,71,.055); color: #d8cfb9; line-height: 1.65; }
 .seo-notice strong { color: #ffe1a0; }
 .seo-toc { padding: 20px; }
 .seo-toc h2, .seo-toc h3 { margin: 0 0 12px; font-size: 1rem; }
-.seo-toc a { display: block; padding: 8px 0; color: var(--text-secondary); font-size: .92rem; }
+.seo-toc a { position: relative; display: block; padding: 8px 0 8px 14px; color: var(--text-secondary); font-size: .92rem; transition: color .45s ease, transform .6s cubic-bezier(.22,.61,.36,1), text-shadow .45s ease; }
+.seo-toc a::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 0; border-radius: 999px; background: var(--accent-3); box-shadow: 0 0 12px rgba(255,191,71,.55); transform: translateY(-50%); transition: height .45s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .seo-toc a:hover { color: #fff; transform: translateX(5px); text-shadow: 0 0 14px rgba(178,77,255,.45); }
+  .seo-toc a:hover::before { height: 20px; }
+}
 .seo-trust { padding: 20px; }
 .seo-trust strong { display: block; margin-bottom: 8px; }
 .seo-trust p { margin: 0; color: var(--text-secondary); line-height: 1.6; font-size: .9rem; }

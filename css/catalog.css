@@ -45,7 +45,7 @@
 .field:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(123,60,255,.12); }
 .select-wrap { display: block; position: relative; }
 .select-wrap::after { content: "⌄"; position: absolute; right: 14px; top: 50%; transform: translateY(-55%); color: var(--text-secondary); pointer-events: none; }
-.select-wrap select { appearance: none; padding-right: 40px; cursor: pointer; }
+.select-wrap select { appearance: none; padding-right: 40px; cursor: pointer; text-align: left; }
 select option { background: #111629; color: var(--text); }
 .select-wrap.custom-select-ready::after { display: none; }
 .custom-select-native {
@@ -68,6 +68,7 @@ select option { background: #111629; color: var(--text); }
   text-align: left;
   cursor: pointer;
   position: relative;
+  text-align: left;
   transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
 .custom-select-trigger:hover {
@@ -135,6 +136,11 @@ select option { background: #111629; color: var(--text); }
   text-align: left;
   cursor: pointer;
   transition: color .15s ease, background .15s ease, transform .15s ease;
+}
+.custom-select-trigger,
+.custom-select-option {
+  text-align: left;
+  justify-content: flex-start;
 }
 .custom-select-option:hover,
 .custom-select-option:focus-visible {
